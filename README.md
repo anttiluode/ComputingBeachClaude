@@ -186,6 +186,78 @@ a contrastive mechanism: something that writes the difference between teacher-pl
 teacher-minus exposures (a two-sign material, a slow/fast pair of sand fractions), as
 coupled learning and equilibrium propagation require. Sol's point, measured.
 
+### G6: plain scour is gradient descent on the source's own compliance ([PREREG_G6G7.md](PREREG_G6G7.md))
+
+Why was "natural" sand already partly aligned with the tasks (G3 here, +0.21 forward-only
+in ComputingBeachSol)? For a drive F and steady swell η = A(s)⁻¹F, take the source's
+compliance J_c = Re(F·η). When A is real symmetric (lossless), the backward field for
+J_c is η itself, so
+
+    dJ_c/ds = −ηᵀ (∂A/∂s) η = (g/2) Σ_faces (∇η)²
+
+Scour lowers the bed by |∇η|², which makes it exactly −∇J_c. **Stigmergy is gradient
+descent with a built-in loss.** This is the self-adjoint case known from structural
+topology optimisation, where strain-energy-driven remodelling (bone) minimises compliance.
+Fresh beds 600–607, three drive ports × three frequencies:
+
+| damping | median cos(scour, −∇J_c) | min | one small step lowers J_c |
+|---|---|---|---|
+| 0 | **0.995** (0.93 at the 0.5-quantile threshold) | 0.980 | **72/72** |
+| 0.0005 | 0.982 | −0.99 | 83 % |
+| 0.002 | 0.717 | −0.97 | 78 % |
+| 0.006 | 0.121 | −0.83 | 58 % |
+
+**P6a–P6d all PASS.** The beach optimises *something* by itself: the compliance of
+whatever drives it. A task only gets help where it overlaps with that. And at this
+cavity's loss, even that self-optimisation is gone.
+
+### G7: sand with a sliding threshold ([PREREG_G6G7.md](PREREG_G6G7.md))
+
+The subtraction G5 needed can be stored in the medium instead of done in code. Give each
+cell a threshold θ that follows its own stress: ds = −r(σ − θ), dθ = (σ − θ)/T. After a
+long time with the forward swell alone, θ = σ_nat and the bed is at rest. Turn on a
+teacher and σ − θ is the cross term plus ½|∇τ|². Nature has this rule twice: the axon
+initial segment moves and resizes to counter chronic activity (homeostasis), and gravel
+beds harden under sub-threshold flow (the stress-history effect).
+
+Found on dev beds 900–905 and fixed in the prereg before the held-out run: **G5's teacher
+was not weak.** At β = 0.03 the teacher swell is 1.5× the forward swell, so its own
+½|∇τ|² term is large. At β = 0.003 (ratio 0.15), a single exposure minus the habituated
+threshold aligns at a median of 0.991. That also revises P2c and P5d, which ran at β = 0.03.
+
+Fresh beds 600–607, β = 0.003, 20 epochs, each update rescaled to the same max step.
+f is the fraction of exact gradient descent's improvement reached:
+
+| damping, task | gd | natural (teacher on, fixed threshold) | **sliding** (θ frozen at habit) | sliding, T = 3 | sliding, teacher off | two-phase (code subtraction) |
+|---|---|---|---|---|---|---|
+| 0, quiet harbour | 1 | 0.27 | **0.92** | 0.81 | 0 (exactly) | 1.00 |
+| 0, loud harbour | 1 | 0.00 | **0.11** | 0.10 | 0 | 1.03 |
+| 0.0005, quiet | 1 | −0.06 | 0.75 | 0.33 | 0 | 0.95 |
+| 0.0005, loud | 1 | 0.18 | 0.41 | 0.24 | 0 | 0.60 |
+| 0.006, quiet | 1 | −0.25 | −0.10 | 0.14 | 0 | 0.02 |
+| 0.006, loud | 1 | 0.20 | −0.01 | 0.03 | 0 | 0.02 |
+
+- **P7a PASS**: lossless, the first single exposure points along the gradient (median cos
+  0.988 quiet, 0.986 loud). No subtraction in code: the medium's memory of its usual
+  stress removes the self-term.
+- **P7b FAIL** (quiet 7/8, loud **5/8**) and **P7d FAIL** (quiet f 0.92, loud **0.11**).
+  It learns the quiet task. On the loud task it raises the harbour's |y|² by about 4.6×
+  (median), against about 2× for plain sand, but gd hunts resonances and reaches ×3.5 to
+  ×200 000 in this lossless cavity. So f is tiny.
+- **P7c PASS**: with the teacher off, the habituated sand moves by exactly 0 on every bed.
+- **P7e PASS**: a threshold that keeps tracking (T = 3) learns the teacher away and does worse.
+- **P7f PASS**, and this is the limit: **the threshold goes stale.** As the bed moves, the
+  natural stress changes and θ no longer cancels it. On half the loud beds the cosine
+  flips sign between epochs 5 and 10. Making the harbour loud changes the whole field
+  faster, so the stale part grows faster. A dev-bed try of "rest" interludes (teacher
+  off, θ re-habituates) gave mixed results, so it isn't claimed.
+- **P7g PASS**: at this cavity's loss, nothing works, code subtraction included (f 0.02).
+  The physical teacher's phase is random there (G5).
+
+So a sliding threshold **removes the subtraction wall** for a weak teacher and a short
+walk. It does **not** remove the loss wall, and it has a range: the bed can only move so far
+before its memory of "normal" is out of date.
+
 ## G3: can the beach learn to route?
 
 Two swells from the west: ω₁ should reach harbourN and ω₂ harbourS. Five beds, 300
@@ -222,11 +294,20 @@ looks like.
 - In a lossless medium the sand computes the gradient (cos 0.989), with the threshold
   behaving as predicted (post hoc, within 0.016).
 - Sand depth is a strong enough maze to route two swells to two harbours (+25.5 dB by exact gradient).
+- Plain scour is gradient descent on the driving source's own compliance when lossless
+  (G6, cos 0.995 on 72 held-out cases), and that law fades with loss (0.12 at 0.006).
+- A sliding threshold (sand that erodes above its habitual stress and deposits below it)
+  turns one weak-teacher exposure into a gradient step with no code subtraction (G7, cos
+  0.99), and trains the quiet-harbour task to 92 % of exact descent, lossless.
 
 **Failed**
 - Reading order back with pings (P1a); quadratic order growth (P1d).
 - Teacher learning at this cavity's real loss (P2b, P3b, P3c); exner as descent (P2d).
-- My natural-sand control (P3d): it is aligned with the task.
+- My natural-sand control (P3d): it is aligned with the task. G6 explains why.
+- Sliding-threshold learning on the loud-harbour task (P7b, P7d): its threshold goes
+  stale within ~5–10 epochs. And at this cavity's loss, sliding threshold learning, like
+  every teacher method here, does nothing (P7g).
+- G5's β = 0.03 teacher was 1.5× the forward swell, not weak (found in G7's dev runs).
 
 **Bugs found on the way**
 - G1's `history()` never applied `ampB`, so swell B ran at amplitude 1, not the
@@ -255,6 +336,8 @@ python g3_router.py                   # ~20 min
 python posthoc_g2.py; python posthoc_g1_diffread.py
 PYTHONPATH=. python posthoc_g3_alignment.py
 python posthoc_g3_lowloss.py 0.0005 0.001
+python g6_compliance.py               # ~1 min
+python g7_sliding.py                  # ~3 min
 python make_figures.py
 node tests/check_js.mjs              # the web page's physics against the Python
 ```
