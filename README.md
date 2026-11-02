@@ -2,7 +2,8 @@
 
 **Can waves write a sand bed that later waves read, and can the bed learn?**
 
-**Live page: [anttiluode.github.io/ComputingBeachClaude](https://anttiluode.github.io/ComputingBeachClaude/)**. Play swells and watch them write the floor, run two beaches through the same storms in opposite order, and play notes through the trained bay. The page runs the same physics as the Python, ported to [`beach.js`](beach.js) and checked against it by `node tests/check_js.mjs` (ping traces to 5e-13, router contrasts to 0.02 dB). It needs a web server for its JavaScript modules: GitHub Pages, or `python -m http.server`.
+**Live page: [anttiluode.github.io/ComputingBeachClaude](https://anttiluode.github.io/ComputingBeachClaude/)**. A second page,
+**[Beaches as attention](https://anttiluode.github.io/ComputingBeachClaude/attention.html)**, is described below. Play swells and watch them write the floor, run two beaches through the same storms in opposite order, and play notes through the trained bay. The page runs the same physics as the Python, ported to [`beach.js`](beach.js) and checked against it by `node tests/check_js.mjs` (ping traces to 5e-13, router contrasts to 0.02 dB). It needs a web server for its JavaScript modules: GitHub Pages, or `python -m http.server`.
 
 Antti's beach picture (2 Nov 2026): waves hit a beach, move sand, and the moved sand changes
 the next wave. In that picture, routing is the sand acting as a maze, looping is the
@@ -13,6 +14,46 @@ tests three things with pre-registered gates ([PREREG.md](PREREG.md), pushed as
 Built by Claude (Opus 5.5).
 
 ![summary](results/summary.png)
+
+## Beaches as attention ([attention.html](attention.html))
+
+Antti's picture (2 Nov 2026): many beaches, each a matrix written by wave fields, sending
+signals to each other, with attention reading them. A beach read between its ports *is* a
+matrix written by what passes through it, a **fast-weight memory**. So the page builds the
+smallest version that makes the correspondence exact: a **crossbar beach**. Sixteen key
+channels run east, sixteen harbour channels run north, and at each crossing a basin of sand
+feels both swells. Its sand moves with ½(a + b)², whose cross term ab is the outer product.
+
+The algebra is in [crossbar.js](crossbar.js), with its assumptions stated in the file and on
+the page: basins sum what their channels pour in, sand moves above a mobility threshold, a
+basin passes waves in proportion to its depth in one pass with no echoes, and depth is bounded.
+It is **not** a wave-equation solve. `node tests/check_crossbar.mjs` checks every claim:
+
+| check | result |
+|---|---|
+| habit sand writes exactly k vᵀ / K | error 6e-17 |
+| plain sand writes that plus a uniform dig | dig 0.19 per write vs cross term 0.0625 |
+| pings move sand | exactly 0 |
+| habit writes in reverse order | identical (6e-17): order lost, like linear attention |
+| delta writes in reverse order | differ by 0.36: order kept |
+| delta rule, 16 orthogonal keys, weak teacher | recalled exactly |
+
+Recall (bit accuracy, 8 random sets, chance 0.5) with keys that look alike (overlap 0.7,
+correlation 0.49):
+
+| pairs stored | 4 | 8 | 12 | 16 | 24 |
+|---|---|---|---|---|---|
+| habit (linear attention) | 0.90 | 0.77 | 0.73 | 0.71 | 0.67 |
+| listen first, 1 rehearsal | 0.88 | 0.78 | 0.73 | 0.73 | 0.69 |
+| listen first, 3 rehearsals | 0.96 | 0.91 | 0.83 | 0.81 | 0.75 |
+| listen first, 8 rehearsals | 1.00 | 0.96 | 0.90 | 0.85 | 0.77 |
+
+Plain sand sits near chance: its uniform dig drives every basin to bedrock (all 256 at the
+limit after 8 pairs). Two beaches joined by a puddle (8 pairs, overlap 0.7, delta ×3):
+two-hop recall 0.747 with no puddle, 0.787 through a shoal-and-breaker (gain then clip),
+0.716 through an overtopping crest. None of this is new machine learning; it's linear attention
+and DeltaNet, drawn as sand. Photonic microring weight banks and phase-change photonic
+memories are the hardware version.
 
 ## The medium
 
@@ -414,6 +455,7 @@ python g7_sliding.py                  # ~3 min
 python g8_open_and_trial.py a         # ~2 min;  b: ~10 min
 python make_figures.py
 node tests/check_js.mjs              # the web page's physics against the Python
+node tests/check_crossbar.mjs        # attention.html's crossbar algebra
 ```
 
 Do not hype. Do not lie. Just show.

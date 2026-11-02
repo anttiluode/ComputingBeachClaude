@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beaches as Attention</title>
+<meta name="description" content="A crossbar beach: strong swells write key-value pairs into basins of sand, weak pings read them back. Plain sand, sand with a habit (linear attention) and sand that listens first (the delta rule), live in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #eef3f1; --land: #e6d39c; --shoal: #bcdbe2; --deep: #5f93ad; --silt: #b9893c;
+    --ink: #1f3346; --ink-soft: #51657a; --mark: #a3317a; --rule: #9fb3bd; --panel: #f7faf9; --focus: #a3317a;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body { margin: 0; color: var(--ink); background: var(--paper); font: 17px/1.55 "Atkinson Hyperlegible", system-ui, sans-serif; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  header.top { padding: 40px 0 18px; }
+  .crumb { font-size: .92rem; margin: 0 0 14px; }
+  h1 { font-family: Spectral, Georgia, serif; font-style: italic; font-weight: 400; font-size: clamp(2.4rem, 5.4vw, 4.2rem);
+       line-height: 1.02; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+  .lede { max-width: 64ch; margin: 14px 0 0; color: var(--ink-soft); font-size: 1.08rem; }
+  h2 { font-family: Spectral, Georgia, serif; font-weight: 600; font-size: 1.75rem; margin: 0 0 6px; line-height: 1.15; }
+  h3 { font-family: Spectral, Georgia, serif; font-size: 1.12rem; margin: 14px 0 6px; font-weight: 600; }
+  section { padding: 34px 0 26px; border-top: 1px solid var(--rule); }
+  section > .wrap > p { max-width: 68ch; }
+  .muted { color: var(--ink-soft); }
+  .chart { position: relative; background: var(--land); border: 1px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 4px; margin: 6px; }
+  .chart canvas { display: block; width: 100%; height: auto; }
+  .scale-note { font-size: .82rem; color: var(--ink-soft); margin: 10px 6px 0; max-width: 70ch; }
+  .hero { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(290px, 1fr); gap: 26px; align-items: start; }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+  .controls { background: var(--panel); border: 1px solid var(--rule); padding: 16px 16px 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .slider { display: grid; grid-template-columns: 9.5em minmax(0, 1fr) 3.2em; gap: 8px; align-items: center; margin-bottom: 8px; font-size: .92rem; }
+  .slider output { text-align: right; font-variant-numeric: tabular-nums; }
+  button { font: inherit; font-size: .95rem; color: var(--ink); background: #fff; border: 1px solid var(--ink); border-radius: 3px; padding: 7px 12px; cursor: pointer; }
+  button:hover { background: #e3eef0; }
+  button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  button.primary { background: var(--mark); border-color: var(--mark); color: #fff; }
+  button.primary:hover { filter: brightness(1.08); }
+  button:disabled { opacity: .45; cursor: default; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  input[type=range], select { font: inherit; accent-color: var(--mark); width: 100%; }
+  label { font-size: .92rem; }
+  .rulehint { font-size: .88rem; color: var(--ink-soft); margin: -2px 0 10px; min-height: 2.6em; }
+  .readout { font-size: .92rem; color: var(--ink-soft); margin: 8px 0 0; }
+  .readout strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px 14px; margin-top: 10px; font-size: .9rem; }
+  .stats div { border-top: 1px solid var(--rule); padding-top: 4px; }
+  .stats b { display: block; font-size: 1.25rem; font-family: Spectral, Georgia, serif; font-variant-numeric: tabular-nums; }
+  .plot { width: 100%; display: block; background: #fff; border: 1px solid var(--rule); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .88rem; margin: 8px 2px 0; }
+  .legend span::before { content: ""; display: inline-block; width: 18px; height: 3px; margin-right: 6px; vertical-align: middle; background: var(--c); }
+  .legend span.dash::before { background: repeating-linear-gradient(90deg, var(--c) 0 5px, transparent 5px 9px); }
+  table { border-collapse: collapse; font-size: .95rem; width: 100%; max-width: 760px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-family: Spectral, Georgia, serif; font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.best { color: var(--mark); font-weight: 700; }
+  .chain { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 26px; align-items: start; }
+  @media (max-width: 860px) { .chain { grid-template-columns: 1fr; } }
+  .ledger { display: grid; grid-template-columns: 1fr 1fr; gap: 0 34px; }
+  @media (max-width: 760px) { .ledger { grid-template-columns: 1fr; } }
+  .ledger h3 { font-style: italic; font-weight: 400; font-size: 1.3rem; margin: 10px 0 4px; }
+  .ledger ul { padding-left: 1.1em; margin: 0 0 12px; }
+  .ledger li { margin: 0 0 8px; max-width: 60ch; }
+  .tablewrap { overflow-x: auto; }
+  a { color: var(--mark); }
+  footer { padding: 26px 0 50px; border-top: 1px solid var(--rule); color: var(--ink-soft); font-size: .92rem; }
+  .motto { font-family: Spectral, Georgia, serif; font-style: italic; font-size: 1.15rem; color: var(--ink); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="crumb"><a href="./">← The computing beach</a></p>
+    <h1>Beaches as attention</h1>
+    <p class="lede">Sixteen channels carry key swells in from the west. Sixteen more carry teacher swells up from
+      the harbours in the south. Where two channels cross, a small basin of sand feels both swells at once, and
+      the interference between them moves its sand. Store pairs with strong swells, then ping a key faintly and
+      listen at the harbours. How the sand responds decides what kind of memory the beach is.</p>
+  </div>
+</header>
+
+<section aria-labelledby="h-bar" style="border-top:none">
+  <div class="wrap hero">
+    <div>
+      <div class="chart"><canvas id="cv-bar" aria-label="The crossbar beach: basins of sand where key channels cross harbour channels"></canvas></div>
+      <p class="scale-note">Blue basins are dug deeper, ochre ones silted up. A magenta ring means the basin hit
+        bedrock or the surface and can't move further. Squares on the west shore are the key, the bars in the south
+        are what each harbour hears (ticks show what it should hear; magenta bars are wrong).</p>
+    </div>
+    <div class="controls">
+      <h2 id="h-bar" style="font-size:1.4rem">How the sand responds</h2>
+      <div class="row" role="group" aria-label="Sand rule">
+        <button class="rule" data-rule="scour">Plain sand</button>
+        <button class="rule" data-rule="habit">Sand with a habit</button>
+        <button class="rule" data-rule="delta">Habit, and listen first</button>
+      </div>
+      <p class="rulehint" id="rulehint" aria-live="polite"></p>
+      <div class="slider"><label for="s-P">Pairs to store</label><input id="s-P" type="range" min="1" max="24" step="1" value="8"><output id="o-P"></output></div>
+      <div class="slider"><label for="s-ov">Keys look alike</label><input id="s-ov" type="range" min="0" max="0.9" step="0.05" value="0.7"><output id="o-ov"></output></div>
+      <div class="slider"><label for="s-pass">Rehearsals</label><input id="s-pass" type="range" min="1" max="8" step="1" value="3"><output id="o-pass"></output></div>
+      <div class="slider"><label for="s-beta">Teacher strength</label><input id="s-beta" type="range" min="0.02" max="0.6" step="0.02" value="0.1"><output id="o-beta"></output></div>
+      <div class="row">
+        <button id="b-store" class="primary">Store the pairs</button>
+        <button id="b-new">New pairs</button>
+        <button id="b-clear">Smooth the sand</button>
+      </div>
+      <div class="row">
+        <button id="b-ping">Ping key 1</button>
+        <button id="b-next" aria-label="Next key">Next key →</button>
+        <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="c-anim" checked style="width:auto"> Animate</label>
+      </div>
+      <div class="stats">
+        <div>Harbour bits right, all pairs<b id="st-bits">–</b></div>
+        <div>This ping<b id="st-ping">–</b></div>
+        <div>Sand moved by pings<b id="st-moved">–</b></div>
+        <div>Basins at their limit<b id="st-clip">–</b></div>
+      </div>
+      <h3>Same pairs, opposite order</h3>
+      <div class="row"><button id="b-order">Store them in reverse on a twin beach</button></div>
+      <p class="readout" id="ro-order" aria-live="polite">Two beaches, the same swells, opposite order. Do they end up with the same sand?</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-cap">
+  <div class="wrap">
+    <h2 id="h-cap">How much one beach can hold</h2>
+    <p>Each line stores more and more pairs on a fresh beach and scores how many harbour bits a ping gets right,
+      averaged over 6 random sets. Chance is 0.5. It follows the <em>keys look alike</em>, <em>rehearsals</em> and
+      <em>teacher strength</em> settings above.</p>
+    <canvas class="plot" id="cv-cap" aria-label="Recall against number of stored pairs for the three sand rules"></canvas>
+    <div class="legend" id="lg-cap"></div>
+    <p class="muted" id="cap-note" aria-live="polite"></p>
+  </div>
+</section>
+
+<section aria-labelledby="h-chain">
+  <div class="wrap">
+    <h2 id="h-chain">Two beaches and a puddle</h2>
+    <p>Beach A stores <em>x → y</em>. Beach B stores <em>y → z</em>. Ping <em>x</em> into A, and A's harbours
+      flow into B's inlets through a puddle. Can B answer <em>z</em>, two hops away? The puddle is the only
+      fast nonlinearity on this page, and there are two kinds.</p>
+    <div class="chain">
+      <div>
+        <canvas class="plot" id="cv-gate" aria-label="What each puddle does to the wave passing through it"></canvas>
+        <div class="legend">
+          <span style="--c:#9fb3bd">no puddle (straight through)</span>
+          <span style="--c:#b9893c">overtopping: only what clears the crest spills over</span>
+          <span style="--c:#1f3346">shoal and breaker: the wave grows ×3 as the water shallows, then breaks at a fixed height</span>
+        </div>
+      </div>
+      <div>
+        <div class="tablewrap"><table id="tb-chain"></table></div>
+        <p class="readout" id="ro-chain" aria-live="polite"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-dict">
+  <div class="wrap">
+    <h2 id="h-dict">The same thing in machine-learning words</h2>
+    <p>A crossbar beach is a <strong>fast-weight memory</strong>: a matrix written by the signals passing through it.
+      Linear attention and DeltaNet are built from exactly this, so none of it is new. What the beach adds is
+      a reason each rule exists, and a picture of it.</p>
+    <div class="tablewrap"><table>
+      <tr><th>On the beach</th><th>In a fast-weight model</th></tr>
+      <tr><td>Key swell along channel <em>j</em>, teacher swell up channel <em>i</em></td><td>key <em>k</em>, value <em>v</em></td></tr>
+      <tr><td>Basin sand moves with ½(a<sub>j</sub> + b<sub>i</sub>)²; its cross term is a<sub>j</sub>b<sub>i</sub></td><td>the outer product <em>v kᵀ</em></td></tr>
+      <tr><td>A faint ping, too weak to move sand, heard at the harbours</td><td>a query: <em>y = S q</em></td></tr>
+      <tr><td>Plain sand: moves whenever it's agitated, so every swell digs every basin</td><td>Hebbian writing with a huge bias; the memory fills with noise and saturates</td></tr>
+      <tr><td>Sand with a habit: moves only by how far the stress is from what it's used to</td><td>linear attention, <em>S += v kᵀ</em></td></tr>
+      <tr><td>Habit, and listen first: ping the key, send back only what the harbours got wrong</td><td>the delta rule (DeltaNet), <em>S += (v − S k) kᵀ</em></td></tr>
+      <tr><td>Habit sand: the same swells in either order leave the same beach</td><td>linear attention's sums commute; order is lost</td></tr>
+      <tr><td>Listening first: the order of the swells matters</td><td>delta writes depend on the state, so they don't commute</td></tr>
+      <tr><td>A puddle between beaches</td><td>the nonlinearity between layers</td></tr>
+    </table></div>
+    <p class="muted">The wave-equation version of these rules was measured in this repository: plain scour is gradient descent
+      on the swell's own compliance (G6), and the habit rule gives one-exposure gradient steps (G7). On real hardware the
+      crossbar is not a metaphor. Photonic weight banks put a tuned microring at each crossing, its weight set by
+      its detuning. Phase-change photonic memories are written by strong light pulses and read by weak ones, and
+      volume holograms store thousands of pages in one crystal, addressed by angle or wavelength.</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-ledger">
+  <div class="wrap">
+    <h2 id="h-ledger">What this page is, and isn't</h2>
+    <div class="ledger">
+      <div>
+        <h3>Computed exactly</h3>
+        <ul>
+          <li>The algebra of an idealised crossbar beach, in <a href="crossbar.js">crossbar.js</a>. Each basin's sloshing amplitude is the sum of
+            what its two channels pour in. Its sand moves with the time-averaged sloshing energy, but only above a mobility
+            (Shields) threshold. It passes the key wave into the harbour channel in proportion to its depth, and its depth is bounded.</li>
+          <li><code>node tests/check_crossbar.mjs</code> checks the claims on this page: habit sand writes exactly <em>k vᵀ</em>, plain
+            sand writes that plus a uniform dig three times larger, pings move exactly no sand, habit writes commute and listening
+            writes don't, and the delta rule stores 16 orthogonal keys exactly.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Assumed or left out</h3>
+        <ul>
+          <li>No wave equation here. Basins pass waves in one pass with no echoes. In the real stadium, echoes scrambled the
+            read badly (G1: the sand held order 98% of the time, but pings read it back about 75% of the time).</li>
+          <li>Teacher swells arrive with the right phase. In the lossy stadium they don't (G5, G8): this page is the lossless limit.</li>
+          <li>The habit is already formed (habituated on random traffic). How it forms, and how it goes stale as the
+            sand moves, is G7's result, not modelled here.</li>
+          <li>Not new as machine learning. It's a way to see it.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="motto">Do not hype. Do not lie. Just show.</p>
+    <p>Part of <a href="https://github.com/anttiluode/ComputingBeachClaude">ComputingBeachClaude</a>, built by Claude (Opus 5.5) for Antti Luode.
+      Sister repository: <a href="https://github.com/anttiluode/ComputingBeachSol">ComputingBeachSol</a>.</p>
+  </div>
+</footer>
+
+<script type="module">
+import * as X from "./crossbar.js";
+
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = { land: css("--land"), shoal: css("--shoal"), deep: css("--deep"), silt: css("--silt"), ink: css("--ink"),
+            soft: css("--ink-soft"), mark: css("--mark"), rule: css("--rule"), paper: css("--paper") };
+const HINT = {
+  scour: "Sand moves whenever the water in its basin is agitated enough. Every strong swell digs every basin it reaches.",
+  habit: "Sand moves only by how far the stress is from what it's used to: deeper when the two swells agree, siltier when they cancel. This is linear attention.",
+  delta: "Before writing, the beach is pinged with the key, and the harbours send back only what they got wrong. This is the delta rule.",
+};
+
+const st = { rule: "habit", P: 8, ov: 0.7, passes: 3, beta: 0.1, seed: 1, bch: null, keys: [], vals: [], cur: 0,
+             heard: null, anim: null, stored: false };
+
+function pairs() {
+  const R = X.rng(st.seed * 7919 + 13);
+  st.keys = X.codes(st.P, X.K, st.ov, R);
+  st.vals = X.codes(st.P, X.V, 0, R);
+}
+function fresh() { st.bch = X.makeBeach(st.rule, st.beta); st.heard = null; st.stored = false; }
+
+/* ---------------- the crossbar canvas ---------------- */
+const cv = $("cv-bar"), cx = cv.getContext("2d");
+let G = null;
+function layout() {
+  const w = cv.parentElement.clientWidth, dpr = window.devicePixelRatio || 1;
+  const h = Math.round(w * 0.92);
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.height = h + "px";
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const L = Math.max(34, w * 0.07), R = 14, T = 26, B = Math.max(64, h * 0.15);
+  G = { w, h, L, R, T, B, dx: (w - L - R) / X.V, dy: (h - T - B) / X.K };
+}
+const colX = i => G.L + (i + 0.5) * G.dx, rowY = j => G.T + (j + 0.5) * G.dy;
+
+function draw(phase) {
+  if (!G) layout();
+  const { w, h, L, R, T, B, dx, dy } = G;
+  cx.fillStyle = C.land; cx.fillRect(0, 0, w, h);
+  // channels
+  cx.fillStyle = C.shoal;
+  const cw = Math.max(3, Math.min(dx, dy) * 0.32);
+  for (let j = 0; j < X.K; j++) cx.fillRect(0, rowY(j) - cw / 2, w - R + 4, cw);
+  for (let i = 0; i < X.V; i++) cx.fillRect(colX(i) - cw / 2, T - 6, cw, h - T + 6);
+  // basins
+  const rad = Math.min(dx, dy) * 0.38;
+  const D = st.bch.D;
+  for (let i = 0; i < X.V; i++) for (let j = 0; j < X.K; j++) {
+    const d = D[i][j], m = Math.min(1, Math.abs(d) / 0.45);
+    cx.beginPath(); cx.arc(colX(i), rowY(j), rad, 0, 2 * Math.PI);
+    cx.fillStyle = C.shoal; cx.fill();
+    cx.globalAlpha = 0.12 + 0.88 * m; cx.fillStyle = d >= 0 ? C.deep : C.silt; cx.fill(); cx.globalAlpha = 1;
+    if (Math.abs(d) >= X.D_MAX - 1e-12) { cx.lineWidth = 2; cx.strokeStyle = C.mark; cx.stroke(); }
+  }
+  // the key on the west shore
+  const key = phase && phase.key ? phase.key : (st.keys[st.cur] || null);
+  if (key) for (let j = 0; j < X.K; j++) {
+    const s = Math.min(dy * 0.55, L * 0.5), x0 = L * 0.5 - s / 2, y0 = rowY(j) - s / 2;
+    cx.lineWidth = 1.5; cx.strokeStyle = C.ink;
+    if (key[j] > 0) { cx.fillStyle = C.ink; cx.fillRect(x0, y0, s, s); } else cx.strokeRect(x0 + .75, y0 + .75, s - 1.5, s - 1.5);
+  }
+  // wavefronts
+  if (phase) {
+    const t = phase.t;
+    if (phase.keyAmp) for (let j = 0; j < X.K; j++) {
+      const x = L * 0.9 + t * (w - R - L * 0.9);
+      cx.strokeStyle = phase.key[j] > 0 ? C.ink : C.mark; cx.globalAlpha = 0.85;
+      cx.lineWidth = Math.max(1.5, cw * phase.keyAmp); cx.beginPath(); cx.moveTo(x - dx * 0.9, rowY(j)); cx.lineTo(x, rowY(j)); cx.stroke();
+    }
+    if (phase.teach) for (let i = 0; i < X.V; i++) {
+      const a = Math.abs(phase.teach[i]); if (a < 1e-3) continue;
+      const y = h - B + 4 - t * (h - B - T);
+      cx.strokeStyle = phase.teach[i] > 0 ? C.ink : C.mark; cx.globalAlpha = Math.min(1, 0.25 + a);
+      cx.lineWidth = Math.max(1.2, cw * 0.9 * Math.min(1, a)); cx.beginPath(); cx.moveTo(colX(i), y + dy * 0.9); cx.lineTo(colX(i), y); cx.stroke();
+    }
+    cx.globalAlpha = 1;
+  }
+  // harbours: heard (bar) vs should-hear (tick)
+  const base = h - B / 2, sc = B * 0.36;
+  cx.strokeStyle = C.ink; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(L - 4, base); cx.lineTo(w - R, base); cx.stroke();
+  const val = st.vals[st.cur];
+  for (let i = 0; i < X.V; i++) {
+    const x = colX(i), bw = Math.max(3, dx * 0.5);
+    if (st.heard) {
+      const y = Math.max(-1.3, Math.min(1.3, st.heard[i]));
+      const right = val && Math.sign(st.heard[i]) === val[i];
+      cx.fillStyle = right ? C.ink : C.mark;
+      cx.fillRect(x - bw / 2, y > 0 ? base - y * sc : base, bw, Math.abs(y) * sc);
+    }
+    if (val) { cx.strokeStyle = C.mark; cx.lineWidth = 2; cx.beginPath(); cx.moveTo(x - bw * 0.8, base - val[i] * sc); cx.lineTo(x + bw * 0.8, base - val[i] * sc); cx.stroke(); }
+  }
+  cx.fillStyle = C.ink; cx.font = `italic ${Math.max(11, Math.min(14, w / 48))}px Spectral, Georgia, serif`;
+  cx.fillText("key", 4, 16);
+}
+
+/* ---------------- animation of stores and pings ---------------- */
+function tween(ms, onFrame) {
+  return new Promise(res => {
+    if (!$("c-anim").checked || ms <= 0) { onFrame(1); return res(); }
+    const t0 = performance.now();
+    const f = now => { const t = Math.min(1, (now - t0) / ms); onFrame(t); t < 1 ? requestAnimationFrame(f) : res(); };
+    requestAnimationFrame(f);
+  });
+}
+let busy = false;
+function setBusy(b) { busy = b; for (const id of ["b-store", "b-new", "b-clear", "b-ping", "b-next", "b-order"]) $(id).disabled = b; document.querySelectorAll(".rule").forEach(x => x.disabled = b); }
+
+async function storeAll() {
+  if (busy) return; setBusy(true);
+  const passes = st.rule === "delta" ? st.passes : 1;
+  const events = st.P * passes * (st.rule === "delta" ? 2 : 1);
+  const ms = Math.max(40, Math.min(320, 5200 / events));
+  for (let p = 0; p < passes; p++) for (let n = 0; n < st.P; n++) {
+    st.cur = n;
+    let teach = st.vals[n];
+    if (st.rule === "delta") {
+      const y = X.read(st.bch, st.keys[n]);
+      await tween(ms, t => { draw({ t, key: st.keys[n], keyAmp: 0.35 }); });
+      st.heard = y; draw();
+      teach = st.vals[n].map((v, i) => v - y[i]);
+    }
+    await tween(ms, t => draw({ t, key: st.keys[n], keyAmp: 1, teach: teach.map(x => x * Math.min(1, st.beta * 6)) }));
+    X.write(st.bch, st.keys[n], teach);
+    draw();
+  }
+  st.stored = true; st.cur = 0; await pingCur(false); score(); setBusy(false);
+}
+
+async function pingCur(animate = true) {
+  const before = st.bch.D.map(r => Float64Array.from(r));
+  if (animate) await tween(260, t => draw({ t, key: st.keys[st.cur], keyAmp: 0.35 }));
+  st.heard = X.read(st.bch, st.keys[st.cur]);
+  let moved = 0;
+  for (let i = 0; i < X.V; i++) for (let j = 0; j < X.K; j++) moved = Math.max(moved, Math.abs(st.bch.D[i][j] - before[i][j]));
+  const right = st.heard.reduce((s, y, i) => s + (Math.sign(y) === st.vals[st.cur][i] ? 1 : 0), 0);
+  $("st-ping").textContent = `${right}/${X.V}`;
+  $("st-moved").textContent = moved === 0 ? "0" : moved.toExponential(1);
+  $("b-ping").textContent = `Ping key ${st.cur + 1}`;
+  draw();
+}
+
+function score() {
+  const r = X.recall(st.bch, st.keys, st.vals);
+  $("st-bits").textContent = st.stored ? r.bits.toFixed(3) : "–";
+  let clip = 0; for (const row of st.bch.D) for (const d of row) if (Math.abs(d) >= X.D_MAX - 1e-12) clip++;
+  $("st-clip").textContent = `${clip} of ${X.K * X.V}`;
+}
+
+function orderTest() {
+  const passes = st.rule === "delta" ? st.passes : 1;
+  const f = X.makeBeach(st.rule, st.beta), r = X.makeBeach(st.rule, st.beta);
+  X.store(f, st.keys, st.vals, passes); X.store(r, [...st.keys].reverse(), [...st.vals].reverse(), passes);
+  let m = 0; for (let i = 0; i < X.V; i++) for (let j = 0; j < X.K; j++) m = Math.max(m, Math.abs(f.D[i][j] - r.D[i][j]));
+  const clipped = f.clipped + r.clipped;
+  let msg;
+  if (m < 1e-9) msg = `Identical to ${m.toExponential(0)}: the order is lost.` + (clipped ? ` (Every basin ran into its limit, so both beaches are equally full.)` : "");
+  else msg = `They differ by up to <strong>${m.toFixed(3)}</strong> in basin depth: the order is in the sand.` + (st.rule !== "delta" && clipped ? ` Here only because basins hit their limit at different times.` : "");
+  const rf = X.recall(f, st.keys, st.vals).bits, rr = X.recall(r, st.keys, st.vals).bits;
+  $("ro-order").innerHTML = `${msg} Recall: ${rf.toFixed(3)} forward, ${rr.toFixed(3)} reversed.`;
+}
+
+/* ---------------- capacity plot ---------------- */
+const SER = [
+  { rule: "scour", passes: () => 1, label: "plain sand", c: "#b9893c", dash: [] },
+  { rule: "habit", passes: () => 1, label: "habit (linear attention)", c: "#5f93ad", dash: [] },
+  { rule: "delta", passes: () => 1, label: "listen first, 1 rehearsal", c: "#1f3346", dash: [5, 4] },
+  { rule: "delta", passes: () => st.passes, label: () => `listen first, ${st.passes} rehearsals`, c: "#1f3346", dash: [] },
+];
+const PS = Array.from({ length: 32 }, (_, i) => i + 1);
+let capTimer = null;
+function capacity() {
+  clearTimeout(capTimer);
+  capTimer = setTimeout(() => {
+    const data = SER.map(s => X.capacity(s.rule, PS, st.ov, 6, s.passes(), st.beta, 3));
+    plotCap(data);
+  }, 60);
+}
+function plotCap(data) {
+  const cvp = $("cv-cap"), w = cvp.clientWidth, h = Math.round(Math.max(240, Math.min(360, w * 0.42))), dpr = devicePixelRatio || 1;
+  cvp.width = w * dpr; cvp.height = h * dpr; cvp.style.height = h + "px";
+  const g = cvp.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = "#fff"; g.fillRect(0, 0, w, h);
+  const l = 44, r = 12, t = 12, b = 34, X0 = p => l + (p - 1) / 31 * (w - l - r), Y0 = v => t + (1 - (v - 0.4) / 0.6) * (h - t - b);
+  g.font = "12px 'Atkinson Hyperlegible', sans-serif"; g.fillStyle = C.soft; g.strokeStyle = "#e3e9ec"; g.lineWidth = 1;
+  for (const v of [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]) { g.beginPath(); g.moveTo(l, Y0(v)); g.lineTo(w - r, Y0(v)); g.stroke(); g.fillText(v.toFixed(1), 8, Y0(v) + 4); }
+  for (const p of [1, 8, 16, 24, 32]) g.fillText(p, X0(p) - 4, h - b + 16);
+  g.fillText("pairs stored", w / 2 - 34, h - 4);
+  g.strokeStyle = C.mark; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(X0(16), t); g.lineTo(X0(16), h - b); g.stroke(); g.setLineDash([]);
+  g.fillStyle = C.mark; g.fillText("16 = number of key channels", X0(16) + 5, t + 12);
+  g.fillStyle = C.soft; g.fillText("chance", l + 4, Y0(0.5) - 4);
+  SER.forEach((s, k) => {
+    g.strokeStyle = s.c; g.lineWidth = 2.2; g.setLineDash(s.dash); g.beginPath();
+    data[k].forEach((v, i) => { const x = X0(PS[i]), y = Y0(Math.max(0.4, v)); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.stroke(); g.setLineDash([]);
+  });
+  $("lg-cap").innerHTML = SER.map(s => `<span class="${s.dash.length ? "dash" : ""}" style="--c:${s.c}">${typeof s.label === "function" ? s.label() : s.label}</span>`).join("");
+  const at = P => data.map(d => d[P - 1]);
+  const a8 = at(8);
+  $("cap-note").textContent = `At 8 pairs: plain sand ${a8[0].toFixed(2)}, habit ${a8[1].toFixed(2)}, listen first ${a8[2].toFixed(2)} (1 rehearsal) and ${a8[3].toFixed(2)} (${st.passes}).`;
+}
+
+/* ---------------- gates and the two-beach chain ---------------- */
+function plotGates() {
+  const cvg = $("cv-gate"), w = cvg.clientWidth, h = Math.round(Math.max(200, Math.min(280, w * 0.55))), dpr = devicePixelRatio || 1;
+  cvg.width = w * dpr; cvg.height = h * dpr; cvg.style.height = h + "px";
+  const g = cvg.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = "#fff"; g.fillRect(0, 0, w, h);
+  const m = 28, X0 = a => m + (a + 2) / 4 * (w - 2 * m), Y0 = v => h / 2 - v / 2.2 * (h / 2 - 16);
+  g.strokeStyle = "#e3e9ec"; g.beginPath(); g.moveTo(m, h / 2); g.lineTo(w - m, h / 2); g.moveTo(X0(0), 8); g.lineTo(X0(0), h - 8); g.stroke();
+  g.font = "12px 'Atkinson Hyperlegible', sans-serif"; g.fillStyle = C.soft;
+  g.fillText("wave in", w - m - 44, h / 2 + 16); g.fillText("wave out", X0(0) + 6, 18);
+  const lines = [["none", "#9fb3bd"], ["overtop", "#b9893c"], ["breaker", "#1f3346"]];
+  for (const [k, c] of lines) {
+    g.strokeStyle = c; g.lineWidth = 2.4; g.beginPath();
+    for (let n = 0; n <= 200; n++) { const a = -2 + 4 * n / 200, y = X.GATES[k](a); const px = X0(a), py = Y0(y); n ? g.lineTo(px, py) : g.moveTo(px, py); }
+    g.stroke();
+  }
+}
+let chainTimer = null;
+function chainTable() {
+  clearTimeout(chainTimer);
+  chainTimer = setTimeout(() => {
+    const rows = [["scour", 1, "Plain sand"], ["habit", 1, "Habit"], ["delta", st.passes, `Listen first ×${st.passes}`]];
+    const gates = [["none", "no puddle"], ["overtop", "overtopping"], ["breaker", "shoal + breaker"]];
+    const res = rows.map(([rule, passes]) => gates.map(([gk]) => { let s = 0; for (let t = 0; t < 8; t++) s += X.chain(rule, st.P, st.ov, gk, 100 + t, passes, st.beta); return s / 8; }));
+    let html = `<tr><th>Two hops, ${st.P} pairs</th>${gates.map(g => `<th class="num">${g[1]}</th>`).join("")}</tr>`;
+    rows.forEach((r, k) => {
+      const best = Math.max(...res[k]);
+      html += `<tr><td>${r[2]}</td>${res[k].map(v => `<td class="num${v === best && best - Math.min(...res[k]) > 0.005 ? " best" : ""}">${v.toFixed(3)}</td>`).join("")}</tr>`;
+    });
+    $("tb-chain").innerHTML = html;
+    const d = res[2];
+    const diffB = d[2] - d[0], diffO = d[1] - d[0];
+    const word = x => (x > 0.005 ? `raises it to ${(d[0] + x).toFixed(3)}` : x < -0.005 ? `lowers it to ${(d[0] + x).toFixed(3)}` : "leaves it about the same");
+    $("ro-chain").innerHTML = `Bit accuracy of <em>z</em>, mean of 8 random sets; chance is 0.5. With these settings, listening sand reaches ${d[0].toFixed(3)} with no puddle. The breaker ${word(diffB)}, and overtopping ${word(diffO)}. ` +
+      `A breaker turns a noisy wave into a clean full-height one of the right sign. Overtopping throws away the quiet part, and that part is signal as well as noise.`;
+  }, 80);
+}
+
+/* ---------------- wiring ---------------- */
+function syncOutputs() {
+  $("o-P").textContent = st.P; $("o-ov").textContent = st.ov.toFixed(2); $("o-pass").textContent = st.passes; $("o-beta").textContent = st.beta.toFixed(2);
+  $("s-pass").disabled = st.rule !== "delta";
+  document.querySelectorAll(".rule").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.rule === st.rule)));
+  $("rulehint").textContent = HINT[st.rule];
+}
+function resetAll() { pairs(); fresh(); st.cur = 0; syncOutputs(); $("st-bits").textContent = "–"; $("st-ping").textContent = "–"; $("st-moved").textContent = "–"; score(); $("b-ping").textContent = "Ping key 1"; draw(); }
+
+document.querySelectorAll(".rule").forEach(b => b.addEventListener("click", () => { st.rule = b.dataset.rule; resetAll(); }));
+const slide = (id, key, f, also) => $(id).addEventListener("input", e => { st[key] = f(e.target.value); syncOutputs(); if (also) also(); });
+slide("s-P", "P", Number, () => { resetAll(); chainTable(); });
+slide("s-ov", "ov", Number, () => { resetAll(); capacity(); chainTable(); });
+slide("s-pass", "passes", Number, () => { capacity(); chainTable(); });
+slide("s-beta", "beta", Number, () => { resetAll(); capacity(); chainTable(); });
+$("b-store").addEventListener("click", () => { fresh(); storeAll(); });
+$("b-new").addEventListener("click", () => { st.seed++; resetAll(); });
+$("b-clear").addEventListener("click", () => { fresh(); score(); $("st-bits").textContent = "–"; draw(); });
+$("b-ping").addEventListener("click", async () => { if (busy) return; setBusy(true); await pingCur(true); setBusy(false); });
+$("b-next").addEventListener("click", async () => { if (busy) return; setBusy(true); st.cur = (st.cur + 1) % st.P; await pingCur(true); setBusy(false); });
+$("b-order").addEventListener("click", orderTest);
+let rT = null;
+addEventListener("resize", () => { clearTimeout(rT); rT = setTimeout(() => { layout(); draw(); capacity(); plotGates(); }, 120); });
+
+layout(); resetAll(); capacity(); plotGates(); chainTable();
+</script>
+</body>
+</html>
