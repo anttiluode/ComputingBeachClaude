@@ -110,6 +110,11 @@ came last. Measured arrivals: west 202, north 92, south 116 steps.
 - **P4c PASS**: a common final wave does not erase the order in the sand. The sand
   decoder stays 0.99–1.00 even when X is twice as strong. The floor holds the
   *sequence*, not just the last event.
+- Post hoc, does X *amplify* the history (steered by it, carving it deeper)? No. On 8
+  beds the AB/BA sand difference ‖sand_ABX − sand_BAX‖ / ‖sand_AB − sand_BA‖ is 1.00,
+  1.02 and 1.03 for X at ×0.5, ×1 and ×2, growing on only 3–4/8 beds. X writes about
+  the same thing onto both beaches and leaves the earlier difference intact: neither
+  erased nor amplified.
 - **P4d PASS** (barely: 0.05 drop): a stronger X makes the order harder to read,
   0.75 → 0.70.
 
