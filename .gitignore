@@ -3,3 +3,4 @@ __pycache__/
 results/*.npy
 results/*.log
 results/g9/*.npz
+results/g9/*.log
