@@ -2,6 +2,8 @@
 
 **Can waves write a sand bed that later waves read, and can the bed learn?**
 
+**Live page: [anttiluode.github.io/ComputingBeachClaude](https://anttiluode.github.io/ComputingBeachClaude/)**. Play swells and watch them write the floor, run two beaches through the same storms in opposite order, and play notes through the trained bay. The page runs the same physics as the Python, ported to [`beach.js`](beach.js) and checked against it by `node tests/check_js.mjs` (ping traces to 5e-13, router contrasts to 0.02 dB). It needs a web server for its JavaScript modules: GitHub Pages, or `python -m http.server`.
+
 Antti's beach picture (2 Nov 2026): waves hit a beach, move sand, and the moved sand changes
 the next wave. In that picture, routing is the sand acting as a maze, looping is the
 basins, and memory is the sand itself. This repo builds the simplest honest version and
@@ -254,6 +256,7 @@ python posthoc_g2.py; python posthoc_g1_diffread.py
 PYTHONPATH=. python posthoc_g3_alignment.py
 python posthoc_g3_lowloss.py 0.0005 0.001
 python make_figures.py
+node tests/check_js.mjs              # the web page's physics against the Python
 ```
 
 Do not hype. Do not lie. Just show.

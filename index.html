@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Computing Beach</title>
+<meta name="description" content="Waves write a sand bed that later waves read. A live simulation of the ComputingBeachClaude experiments.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #eef3f1;      /* chart paper */
+    --land: #e6d39c;       /* chart buff */
+    --shoal: #bcdbe2;
+    --deep: #5f93ad;
+    --ink: #1f3346;        /* chart navy */
+    --ink-soft: #51657a;
+    --mark: #a3317a;       /* chart magenta: marks, hazards, the things you should look at */
+    --rule: #9fb3bd;
+    --panel: #f7faf9;
+    --focus: #a3317a;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body {
+    margin: 0; color: var(--ink); background: var(--paper);
+    font: 17px/1.55 "Atkinson Hyperlegible", system-ui, sans-serif;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  header.top { padding: 48px 0 18px; }
+  h1 {
+    font-family: Spectral, Georgia, serif; font-style: italic; font-weight: 400;
+    font-size: clamp(2.4rem, 5.4vw, 4.2rem); line-height: 1.02; margin: 0;
+    letter-spacing: -0.01em; text-wrap: balance;
+  }
+  .lede { max-width: 62ch; margin: 14px 0 0; color: var(--ink-soft); font-size: 1.08rem; }
+  h2 {
+    font-family: Spectral, Georgia, serif; font-weight: 600; font-size: 1.75rem;
+    margin: 0 0 6px; line-height: 1.15;
+  }
+  section { padding: 34px 0 26px; border-top: 1px solid var(--rule); }
+  section > .wrap > p { max-width: 68ch; }
+  .muted { color: var(--ink-soft); }
+
+  /* the chart: a stadium-shaped bay inside a double neatline */
+  .chart {
+    position: relative; background: var(--land);
+    border: 1px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 4px;
+    margin: 6px;
+  }
+  .chart canvas { display: block; width: 100%; height: auto; image-rendering: auto; }
+  .place {
+    position: absolute; transform: translate(-50%, -50%);
+    font-family: Spectral, Georgia, serif; font-style: italic; font-size: .92rem;
+    color: var(--ink); pointer-events: none; white-space: nowrap;
+    text-shadow: 0 0 3px var(--land), 0 0 3px var(--land);
+  }
+  .buoy {
+    position: absolute; width: 9px; height: 9px; border-radius: 50%;
+    border: 2px solid var(--mark); background: var(--paper); transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .scale-note { font-size: .82rem; color: var(--ink-soft); margin: 10px 6px 0; }
+
+  .hero { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(280px, 1fr); gap: 26px; align-items: start; }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+
+  .controls { background: var(--panel); border: 1px solid var(--rule); padding: 16px 16px 12px; }
+  .controls h3 { font-family: Spectral, Georgia, serif; font-size: 1.12rem; margin: 0 0 8px; font-weight: 600; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+  button {
+    font: inherit; font-size: .95rem; color: var(--ink); background: #fff;
+    border: 1px solid var(--ink); border-radius: 3px; padding: 7px 12px; cursor: pointer;
+  }
+  button:hover { background: #e3eef0; }
+  button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  button.primary { background: var(--mark); border-color: var(--mark); color: #fff; }
+  button.primary:hover { filter: brightness(1.08); }
+  button:disabled { opacity: .45; cursor: default; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  label { font-size: .92rem; }
+  select, input[type=range] { font: inherit; accent-color: var(--mark); }
+  .readout { font-size: .9rem; color: var(--ink-soft); min-height: 1.4em; }
+  .readout strong { color: var(--ink); }
+  .scope { width: 100%; height: 120px; display: block; background: #fff; border: 1px solid var(--rule); }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 700px) { .pair { grid-template-columns: 1fr; } }
+  .pair figure, .solo figure { margin: 0; }
+  figcaption { font-family: Spectral, Georgia, serif; font-style: italic; margin: 4px 6px 0; }
+  .diffrow { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 18px; margin-top: 14px; align-items: start; }
+  @media (max-width: 700px) { .diffrow { grid-template-columns: 1fr; } }
+
+  .meters { display: grid; gap: 10px; margin: 10px 0; }
+  .meter { display: grid; grid-template-columns: 7.5em 1fr 4.8em; gap: 10px; align-items: center; font-size: .92rem; }
+  .bar { height: 14px; background: #fff; border: 1px solid var(--rule); position: relative; }
+  .bar > span { position: absolute; inset: 0 auto 0 0; background: var(--deep); width: 0; transition: width .25s; }
+  .bar.lead > span { background: var(--mark); }
+
+  .ledger { display: grid; grid-template-columns: 1fr 1fr; gap: 0 34px; }
+  @media (max-width: 760px) { .ledger { grid-template-columns: 1fr; } }
+  .ledger h3 { font-family: Spectral, Georgia, serif; font-style: italic; font-weight: 400; font-size: 1.3rem; margin: 10px 0 4px; }
+  .ledger ul { padding-left: 1.1em; margin: 0 0 12px; }
+  .ledger li { margin: 0 0 8px; max-width: 60ch; }
+  a { color: var(--mark); }
+  footer { padding: 26px 0 50px; border-top: 1px solid var(--rule); color: var(--ink-soft); font-size: .92rem; }
+  .motto { font-family: Spectral, Georgia, serif; font-style: italic; font-size: 1.15rem; color: var(--ink); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>A beach that remembers which waves hit it</h1>
+    <p class="lede">Waves move sand. The moved sand bends the next wave. This page runs the same
+      simulation as the <a href="https://github.com/anttiluode/ComputingBeachClaude">ComputingBeachClaude</a>
+      repository, live in your browser. Play a swell and watch it write the floor. Send a faint ping
+      and hear what the floor says back.</p>
+  </div>
+</header>
+
+<section aria-labelledby="h-play" style="border-top:none">
+  <div class="wrap hero">
+    <div>
+      <div class="chart" id="chart-play"><canvas id="cv-play" width="82" height="46" aria-label="The bay: water depth and moving waves"></canvas></div>
+      <p class="scale-note">Darker blue is deeper water, where waves run faster. Light swirls are the waves.
+        Magenta marks sand the waves have already moved.</p>
+    </div>
+    <div class="controls" aria-labelledby="h-play">
+      <h2 id="h-play" style="font-size:1.4rem">Play a swell</h2>
+      <div class="row" role="group" aria-label="Swell length">
+        <button data-omega="0.25" class="note">Long swell</button>
+        <button data-omega="0.40" class="note">Medium</button>
+        <button data-omega="0.60" class="note">Short</button>
+      </div>
+      <div class="row">
+        <label for="sel-port">From</label>
+        <select id="sel-port">
+          <option value="west">the west mouth</option>
+          <option value="north">the north shore</option>
+          <option value="south">the south shore</option>
+        </select>
+        <label for="rng-amp">Strength</label>
+        <input id="rng-amp" type="range" min="0.4" max="1.6" step="0.05" value="1">
+      </div>
+      <div class="row">
+        <button id="btn-stop">Stop the swell</button>
+        <button id="btn-calm">Calm the water</button>
+        <button id="btn-reset">Reset the sand</button>
+      </div>
+      <div class="row" role="group" aria-label="How the sand moves">
+        <button id="w-scour" aria-pressed="true">Sand scours in place</button>
+        <button id="w-exner" aria-pressed="false">Sand drifts to calm water</button>
+      </div>
+      <h3>Ping the bay</h3>
+      <div class="row">
+        <button id="btn-ping" class="primary">Send a ping</button>
+      </div>
+      <canvas class="scope" id="scope-play" width="600" height="120" aria-label="Echo heard at the south harbour"></canvas>
+      <p class="readout" id="ro-play" aria-live="polite">The ping is heard at the south harbour. A ping is too weak to move sand.</p>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="muted">Each swell leaves bars spaced half its wavelength apart: long swells write coarse print,
+      short swells write fine print. On real coasts, bars like these reflect the very wave that made them
+      (Bragg reflection by sandbars). The shortest swell here is at the limit of this 96-cell grid.</p>
+  </div>
+</section>
+
+<section aria-labelledby="h-order">
+  <div class="wrap">
+    <h2 id="h-order">Same storms, opposite order</h2>
+    <p>Two identical beaches get the same two storms, in opposite order. Then a third storm hits both
+      (optional). Then both are pinged. In the experiments, the sand tells the orders apart on 98 % of
+      unseen beds, and still 99–100 % after the third storm. Read through a ping, it is 70–75 %.</p>
+    <div class="row">
+      <button id="btn-order" class="primary">Run the storms</button>
+      <label><input type="checkbox" id="chk-x"> Add a third storm to both</label>
+    </div>
+    <div class="pair">
+      <figure><div class="chart"><canvas id="cv-ab" width="82" height="46" aria-label="Beach A then B"></canvas></div>
+        <figcaption>West storm, then north storm</figcaption></figure>
+      <figure><div class="chart"><canvas id="cv-ba" width="82" height="46" aria-label="Beach B then A"></canvas></div>
+        <figcaption>North storm, then west storm</figcaption></figure>
+    </div>
+    <div class="diffrow">
+      <figure style="margin:0"><div class="chart"><canvas id="cv-diff" width="82" height="46" aria-label="Where the two beaches differ"></canvas></div>
+        <figcaption>Where the two beaches differ</figcaption></figure>
+      <div>
+        <canvas class="scope" id="scope-order" width="600" height="120" aria-label="The two echoes"></canvas>
+        <p class="readout" id="ro-order" aria-live="polite">Navy: the first beach's echo. Grey: the second's. Magenta: their difference, magnified 50×.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-route">
+  <div class="wrap hero">
+    <div class="solo">
+      <figure><div class="chart" id="chart-route"><canvas id="cv-route" width="82" height="46" aria-label="The trained bay"></canvas></div>
+        <figcaption id="cap-route">The bed after training. Note the rings: lenses made of sand.</figcaption></figure>
+    </div>
+    <div class="controls">
+      <h2 id="h-route" style="font-size:1.4rem">A bay that learned to route</h2>
+      <p class="muted" style="margin-top:0">This bed was shaped by gradient descent so that the low note
+        reaches the north harbour and the high note the south harbour. The waves didn't learn this
+        by themselves; that part failed in the experiments.</p>
+      <div class="row" role="group" aria-label="Which bed">
+        <button id="bed-orig" aria-pressed="false">Original bed</button>
+        <button id="bed-gd" aria-pressed="true">Trained bed</button>
+      </div>
+      <div class="row" role="group" aria-label="Which note">
+        <button class="rnote" data-omega="0.40" data-right="N">Play the low note</button>
+        <button class="rnote" data-omega="0.47" data-right="S">Play the high note</button>
+      </div>
+      <div class="meters">
+        <div class="meter"><span>North harbour</span><div class="bar" id="bar-N"><span></span></div><span id="db-N">–</span></div>
+        <div class="meter"><span>South harbour</span><div class="bar" id="bar-S"><span></span></div><span id="db-S">–</span></div>
+      </div>
+      <p class="readout" id="ro-route" aria-live="polite">Pick a note. The bars settle after a few seconds.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-ledger">
+  <div class="wrap">
+    <h2 id="h-ledger">What held, and what didn't</h2>
+    <div class="ledger">
+      <div>
+        <h3>Held</h3>
+        <ul>
+          <li>Waves write history into the sand. The order of two storms is stored (sand decoder 0.98),
+            and only because each wave is steered by sand an earlier wave moved. Without that feedback
+            the two beaches end up identical.</li>
+          <li>A later common storm does not erase the order: 0.99–1.00 in the sand.</li>
+          <li>Pings read without writing: below the sand's threshold, nothing moves.</li>
+          <li>The sand floor is a strong enough maze to route swells: +25.5 dB on average by exact gradient.</li>
+          <li>In a lossless bay, sand that scours in place follows the true gradient (cos 0.989) when a teacher wave is sent back from the harbour.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Didn't</h3>
+        <ul>
+          <li>Reading order through a ping on new beds: 0.70–0.75, not the 0.90 predicted.
+            Sol's repo, with 8 writable wall patches instead of a whole floor, reads at 0.94–1.00.</li>
+          <li>Learning from a teacher wave at this bay's real damping: the teacher's phase is effectively random (alignment 0.24).</li>
+          <li>Learning from a single exposure, even lossless: the teacher tilts each step the right way on 8 of 8 beds,
+            but beats plain scouring on only 3 of 8. The difference between exposures has to be computed outside the sand.</li>
+          <li>Sand that drifts to calm water (conserving sand) does not descend the gradient.</li>
+        </ul>
+      </div>
+    </div>
+    <p>Every number above has a pre-registration, a script and a results file in the
+      <a href="https://github.com/anttiluode/ComputingBeachClaude">repository</a>. The sister repository is
+      <a href="https://github.com/anttiluode/ComputingBeachSol">ComputingBeachSol</a>; the cavity reader is from
+      <a href="https://github.com/anttiluode/WallMemoryLaw">WallMemoryLaw</a>. This page's physics is checked against the
+      Python to 5e-13 (<code>tests/check_js.mjs</code>).</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="motto">Do not hype. Do not lie. Just show.</p>
+    <p>Antti Luode, PerceptionLab, with Claude (Opus 5.5) and Sol. November 2026.</p>
+  </div>
+</footer>
+
+<script type="module">
+import { makeBeach, port, decodeBed, Tank, PORTS, PROBE_AMP, RATE, N } from "./beach.js";
+import { BEDS } from "./beds.js";
+
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const B = makeBeach();
+const P = Object.fromEntries(Object.keys(PORTS).map(k => [k, port(B, k)]));
+const bed300 = decodeBed(BEDS.bed300), bedOrig = decodeBed(BEDS.initial202), bedGD = decodeBed(BEDS.gd202);
+
+// crop to the bay
+let r0 = N, r1 = 0, c0 = N, c1 = 0;
+for (const [r, c] of B.cells) { r0 = Math.min(r0, r); r1 = Math.max(r1, r); c0 = Math.min(c0, c); c1 = Math.max(c1, c); }
+const W = c1 - c0 + 1, H = r1 - r0 + 1;
+
+// chart colours
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const LAND = hex("#e6d39c"), SHOAL = hex("#bcdbe2"), DEEP = hex("#4f86a3"), INK = hex("#1f3346"), MARK = hex("#a3317a");
+const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+
+function draw(cv, tank, opts = {}) {
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(W, H);
+  for (let i = 0; i < W * H; i++) { img.data.set([...LAND, 255], i * 4); }
+  const gain = opts.gain ?? 0.9;
+  for (let k = 0; k < B.n; k++) {
+    const [r, c] = B.cells[k];
+    const depth = 1 - tank.sand[k];
+    const band = Math.round(((depth - 0.4) / 0.6) * 6) / 6;     // chart depth bands
+    let col = mix(SHOAL, DEEP, Math.max(0, Math.min(1, band)));
+    if (opts.base) {
+      const moved = Math.min(1, Math.abs(tank.sand[k] - opts.base[k]) / 0.35);
+      col = mix(col, MARK, moved * 0.85);
+    }
+    if (opts.waves !== false) {
+      const v = Math.max(-1, Math.min(1, tank.u[k] * gain));
+      col = v > 0 ? mix(col, [255, 255, 255], v * 0.75) : mix(col, INK, -v * 0.6);
+    }
+    const i = ((r - r0) * W + (c - c0)) * 4;
+    img.data.set([col[0], col[1], col[2], 255], i);
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function drawDiff(cv, a, b) {
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d"), img = ctx.createImageData(W, H);
+  for (let i = 0; i < W * H; i++) img.data.set([...LAND, 255], i * 4);
+  for (let k = 0; k < B.n; k++) {
+    const [r, c] = B.cells[k];
+    const t = Math.min(1, Math.abs(a[k] - b[k]) / 0.08);
+    const col = mix([247, 250, 249], MARK, t);
+    img.data.set([col[0], col[1], col[2], 255], ((r - r0) * W + (c - c0)) * 4);
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function labels(chartId, names) {
+  const el = document.getElementById(chartId);
+  const text = { west: "West mouth", north: "North shore", south: "South shore", harbourN: "N. harbour", harbourS: "S. harbour" };
+  const nudge = { west: [0, 7], north: [4, 0], south: [-4, 0], harbourN: [-4, 0], harbourS: [4, 0] };
+  for (const n of names) {
+    const [r, c] = PORTS[n];
+    const x = (c - c0 + 0.5) / W * 100, y = (r - r0 + 0.5) / H * 100;
+    const b = document.createElement("span"); b.className = "buoy"; b.style.left = x + "%"; b.style.top = y + "%"; el.append(b);
+    const t = document.createElement("span"); t.className = "place"; t.textContent = text[n];
+    t.style.left = (x + nudge[n][1] * 100 / W) + "%"; t.style.top = (y + nudge[n][0] * 100 / H) + "%"; el.append(t);
+  }
+}
+
+function scope(cv, traces, colors) {
+  const ctx = cv.getContext("2d"), w = cv.width, h = cv.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = "#d6e2e6"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+  let m = 1e-12; for (const t of traces) for (const v of t) m = Math.max(m, Math.abs(v));
+  traces.forEach((t, q) => {
+    if (!t.length) return;
+    ctx.strokeStyle = colors[q]; ctx.lineWidth = 1.6; ctx.beginPath();
+    t.forEach((v, i) => { const x = i / 700 * w, y = h / 2 - v / m * (h * 0.45); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+  });
+}
+const dot = (w, u) => { let s = 0; for (let k = 0; k < B.n; k++) s += w[k] * u[k]; return s; };
+const norm = (a, b) => { let s = 0; for (let k = 0; k < a.length; k++) s += (a[k] - b[k]) ** 2; return Math.sqrt(s); };
+
+/* ---------------- 1. play ---------------- */
+const play = { tank: new Tank(B, bed300), drive: null, mode: "scour", ping: null, lastPing: null };
+labels("chart-play", ["west", "north", "south", "harbourS"]);
+const cvPlay = document.getElementById("cv-play"), scPlay = document.getElementById("scope-play"), roPlay = document.getElementById("ro-play");
+document.querySelectorAll(".note").forEach(b => b.addEventListener("click", () => {
+  const amp = +document.getElementById("rng-amp").value;
+  play.drive = { w: P[document.getElementById("sel-port").value], amp, omega: +b.dataset.omega };
+  document.querySelectorAll(".note").forEach(o => o.setAttribute("aria-pressed", o === b ? "true" : "false"));
+  roPlay.textContent = "The swell is writing the floor. Stop it, then ping to hear what changed.";
+}));
+document.getElementById("btn-stop").addEventListener("click", () => { play.drive = null; document.querySelectorAll(".note").forEach(o => o.setAttribute("aria-pressed", "false")); });
+document.getElementById("btn-calm").addEventListener("click", () => { play.tank.calm(); });
+document.getElementById("btn-reset").addEventListener("click", () => {
+  play.drive = null; play.tank = new Tank(B, bed300); play.lastPing = null; scope(scPlay, [], []);
+  document.querySelectorAll(".note").forEach(o => o.setAttribute("aria-pressed", "false"));
+  roPlay.textContent = "Fresh sand. Ping it first, then play a swell and ping again.";
+});
+for (const [id, mode] of [["w-scour", "scour"], ["w-exner", "exner"]]) document.getElementById(id).addEventListener("click", () => {
+  play.mode = mode;
+  document.getElementById("w-scour").setAttribute("aria-pressed", mode === "scour");
+  document.getElementById("w-exner").setAttribute("aria-pressed", mode === "exner");
+});
+document.getElementById("btn-ping").addEventListener("click", () => {
+  play.drive = null; document.querySelectorAll(".note").forEach(o => o.setAttribute("aria-pressed", "false"));
+  play.tank.calm();
+  play.pingSand = Float64Array.from(play.tank.sand);
+  play.tank.addPulse(P.south, PROBE_AMP);
+  play.ping = []; roPlay.textContent = "Listening…";
+});
+
+/* ---------------- 2. order ---------------- */
+const order = { L: new Tank(B, bed300), R: new Tank(B, bed300), plan: null };
+const cvAB = document.getElementById("cv-ab"), cvBA = document.getElementById("cv-ba"), cvDiff = document.getElementById("cv-diff");
+const scOrd = document.getElementById("scope-order"), roOrd = document.getElementById("ro-order");
+const STORM = { A: { port: "west", omega: 0.40, amp: 1 }, B: { port: "north", omega: 0.47, amp: 1.18 }, X: { port: "south", omega: 0.43, amp: 1.0 } };
+// same write strength as the experiments: 10 write steps of RATE at s = 0.04, spread over the 2400 writing steps
+const STORM_STEPS = 3000, WRITE_RATE = RATE * 10 / 2400;
+document.getElementById("btn-order").addEventListener("click", () => {
+  order.L = new Tank(B, bed300); order.R = new Tank(B, bed300);
+  const x = document.getElementById("chk-x").checked;
+  const L = x ? ["A", "B", "X"] : ["A", "B"], R = x ? ["B", "A", "X"] : ["B", "A"];
+  order.plan = { L, R, i: 0, t: 0, ping: null };
+  roOrd.textContent = "Storm 1 of " + L.length + "…";
+  document.getElementById("btn-order").disabled = true;
+});
+
+/* ---------------- 3. route ---------------- */
+const route = { tank: new Tank(B, bedGD), bed: "gd", drive: null, right: null, pN: 0, pS: 0, mN: 0, mS: 0, n: 0 };
+labels("chart-route", ["west", "harbourN", "harbourS"]);
+const cvRoute = document.getElementById("cv-route"), roRoute = document.getElementById("ro-route");
+function setBed(which) {
+  route.bed = which; route.tank = new Tank(B, which === "gd" ? bedGD : bedOrig);
+  route.pN = route.pS = route.mN = route.mS = 0; route.n = 0;
+  document.getElementById("bed-gd").setAttribute("aria-pressed", which === "gd");
+  document.getElementById("bed-orig").setAttribute("aria-pressed", which !== "gd");
+  document.getElementById("cap-route").textContent = which === "gd" ? "The bed after training. Note the rings: lenses made of sand." : "The same bay before training: random roughness.";
+}
+document.getElementById("bed-gd").addEventListener("click", () => setBed("gd"));
+document.getElementById("bed-orig").addEventListener("click", () => setBed("orig"));
+document.querySelectorAll(".rnote").forEach(b => b.addEventListener("click", () => {
+  route.tank.calm(); route.pN = route.pS = route.mN = route.mS = 0; route.n = 0;
+  route.drive = { w: P.west, amp: 1, omega: +b.dataset.omega }; route.right = b.dataset.right;
+  document.querySelectorAll(".rnote").forEach(o => o.setAttribute("aria-pressed", o === b ? "true" : "false"));
+  roRoute.textContent = "Filling the bay…";
+}));
+
+/* ---------------- loop ---------------- */
+const visible = new Map();
+const io = new IntersectionObserver(es => es.forEach(e => visible.set(e.target.id, e.isIntersecting)), { rootMargin: "100px" });
+["h-play", "h-order", "h-route"].forEach(id => io.observe(document.getElementById(id).closest("section")));
+document.querySelectorAll("section").forEach((s, i) => s.id ||= "s" + i);
+const isVis = id => visible.get(document.getElementById(id).closest("section").id) !== false;
+
+const base300 = Float64Array.from(bed300);
+function frame() {
+  // 1. play
+  if (isVis("h-play")) {
+    const T = play.tank;
+    for (let s = 0; s < 14; s++) {
+      T.step(play.drive ? [play.drive] : [], 1 / 120);
+      if (play.ping) {
+        play.ping.push(dot(P.harbourS, T.u));
+        if (play.ping.length >= 700) {
+          const moved = norm(T.sand, play.pingSand);
+          scope(scPlay, [play.lastPing || [], play.ping], ["#b9c8cf", "#1f3346"]);
+          roPlay.innerHTML = play.lastPing
+            ? `Grey is the previous ping, navy this one. Sand moved by this ping: <strong>${moved.toFixed(4)}</strong>.`
+            : `That is the bay's echo. Sand moved by the ping: <strong>${moved.toFixed(4)}</strong>. Play a swell, then ping again.`;
+          play.lastPing = play.ping; play.ping = null;
+          break;
+        }
+      }
+    }
+    if (play.ping && play.ping.length % 35 < 14) scope(scPlay, [play.lastPing || [], play.ping], ["#b9c8cf", "#1f3346"]);
+    if (play.drive || T.stress.some(v => v > 0.6)) T.write(RATE / 60 * 1.0, play.mode);
+    draw(cvPlay, T, { base: base300 });
+  }
+  // 2. order
+  if (order.plan && isVis("h-order")) {
+    const p = order.plan;
+    if (p.i < p.L.length) {
+      const a = STORM[p.L[p.i]], b = STORM[p.R[p.i]];
+      for (let s = 0; s < 60; s++) {
+        order.L.step([{ w: P[a.port], amp: a.amp, omega: a.omega }], 1 / 120);
+        order.R.step([{ w: P[b.port], amp: b.amp, omega: b.omega }], 1 / 120);
+        if (p.t > 600) { order.L.write(WRITE_RATE); order.R.write(WRITE_RATE); }
+        p.t++;
+      }
+      if (p.t >= STORM_STEPS) {
+        order.L.calm(); order.R.calm(); p.i++; p.t = 0;
+        roOrd.textContent = p.i < p.L.length ? `Storm ${p.i + 1} of ${p.L.length}…` : "Pinging both beaches…";
+        if (p.i === p.L.length) { order.L.addPulse(P.south, PROBE_AMP); order.R.addPulse(P.south, PROBE_AMP); p.ping = [[], []]; }
+      }
+    } else if (p.ping) {
+      for (let s = 0; s < 35 && p.ping[0].length < 700; s++) {
+        order.L.step(); order.R.step();
+        p.ping[0].push(dot(P.harbourS, order.L.u)); p.ping[1].push(dot(P.harbourS, order.R.u));
+      }
+      const diff50 = p.ping[0].map((v, i) => 50 * (v - p.ping[1][i]));
+      scope(scOrd, [p.ping[1], p.ping[0], diff50], ["#9fb3bd", "#1f3346", "#a3317a"]);
+      if (p.ping[0].length >= 700) {
+        const d = norm(order.L.sand, order.R.sand);
+        const rms = v => Math.sqrt(v.reduce((s, x) => s + x * x, 0) / v.length);
+        const rel = rms(p.ping[0].map((v, i) => v - p.ping[1][i])) / rms(p.ping[0]);
+        roOrd.innerHTML = `Same storms, same starting sand, opposite order. The two echoes differ by only <strong>${(100 * rel).toFixed(1)} %</strong> (magenta: that difference, magnified 50×), though the storms changed each echo far more. That small wrinkle is the order. On beds a reader has never seen, it can be told from echoes about 3 times in 4; from the sand itself, almost always.`;
+        order.plan = null; document.getElementById("btn-order").disabled = false;
+      }
+    }
+    draw(cvAB, order.L, { base: base300 }); draw(cvBA, order.R, { base: base300 }); drawDiff(cvDiff, order.L.sand, order.R.sand);
+  }
+  // 3. route
+  if (isVis("h-route")) {
+    const T = route.tank;
+    for (let s = 0; s < (route.drive ? 120 : 20); s++) {
+      T.step(route.drive ? [route.drive] : []);
+      if (route.drive) {
+        const yN = dot(P.harbourN, T.u), yS = dot(P.harbourS, T.u), a = 1 / 400;
+        route.mN += a * (yN - route.mN); route.mS += a * (yS - route.mS);
+        route.pN += a * ((yN - route.mN) ** 2 - route.pN); route.pS += a * ((yS - route.mS) ** 2 - route.pS);
+        route.n++;
+      }
+    }
+    if (route.drive && route.n > 400) {
+      const dbN = 10 * Math.log10(route.pN + 1e-30), dbS = 10 * Math.log10(route.pS + 1e-30), top = Math.max(dbN, dbS);
+      const width = d => Math.max(2, Math.min(100, 100 + (d - top) * 1.6)) + "%";
+      document.querySelector("#bar-N > span").style.width = width(dbN);
+      document.querySelector("#bar-S > span").style.width = width(dbS);
+      document.getElementById("bar-N").classList.toggle("lead", dbN >= dbS);
+      document.getElementById("bar-S").classList.toggle("lead", dbS > dbN);
+      document.getElementById("db-N").textContent = (dbN - top).toFixed(1) + " dB";
+      document.getElementById("db-S").textContent = (dbS - top).toFixed(1) + " dB";
+      const want = route.right === "N" ? dbN - dbS : dbS - dbN;
+      if (route.n > 2400) roRoute.innerHTML = `The ${route.right === "N" ? "north" : "south"} harbour gets <strong>${want.toFixed(1)} dB</strong> more than the other one.`;
+    }
+    draw(cvRoute, T, { gain: 0.25 });
+  }
+  requestAnimationFrame(frame);
+}
+draw(cvPlay, play.tank); draw(cvAB, order.L); draw(cvBA, order.R); drawDiff(cvDiff, order.L.sand, order.R.sand); draw(cvRoute, route.tank, { gain: 0.25 });
+if (!reduced) { play.drive = { w: P.west, amp: 0.28, omega: 0.40 }; setTimeout(() => { if (play.drive && play.drive.amp === 0.28) play.drive = null; }, 5000); }  // intro swell: below the sand threshold, writes nothing
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
