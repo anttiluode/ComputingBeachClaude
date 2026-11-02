@@ -1,6 +1,7 @@
 """POST HOC (not pre-registered): G3 rerun at low damping, after G2 showed loss destroys the teacher alignment.
 G3: can the beach learn to route two swells to two harbours?  (PREREG.md, P3a-P3d)"""
 import json
+import sys
 import numpy as np
 
 from beach.medium import Beach, rough_bed, scour, exner, apply
@@ -8,7 +9,7 @@ from beach.medium import Beach, rough_bed, scour, exner, apply
 FREQS = [(0.40, "harbourN", "harbourS"), (0.47, "harbourS", "harbourN")]
 SEEDS = range(200, 205)
 EPOCHS = 300
-STEP = 0.005
+STEP = float(sys.argv[2]) if len(sys.argv) > 2 else 0.001
 
 import sys
 DAMP = float(sys.argv[1]) if len(sys.argv) > 1 else 0.0005
@@ -87,5 +88,5 @@ out["would_gd_ge_10dB"] = gain["gd"] >= 10
 out["would_teacher_ge_half_gd"] = gain["teacher_scour"] >= 0.5 * gain["gd"]
 
 out["would_natural_within_3dB"] = abs(gain["natural"]) <= 3
-json.dump(out, open("results/posthoc_g3_lowloss.json", "w"), indent=1)
+json.dump(out, open(f"results/posthoc_g3_lowloss_d{DAMP}_s{STEP}.json", "w"), indent=1)
 print({k: v for k, v in out.items() if k not in ("curves", "final")})

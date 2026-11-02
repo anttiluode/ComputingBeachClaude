@@ -1,0 +1,4 @@
+200 gd +4.49 -> +10.91 dB  (best +11.45)
+200 teacher_scour +4.49 -> +4.04 dB  (best +18.71)
+200 teacher_scour_one +4.49 -> +1.04 dB  (best +16.46)
+200 natural +4.49 -> +2.01 dB  (best +15.05)
