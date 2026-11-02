@@ -116,12 +116,12 @@ def main():
                 key = f"{writer}_s{s}_{loop}"
                 out["cells"][key] = cell
                 print(key, cell, flush=True)
-    out["worst_probe_stress_over_sigma_c"] = worst_probe
-    out["reads_write_nothing"] = worst_probe < 1.0
+    out["worst_probe_stress_over_sigma_c"] = float(worst_probe)
+    out["reads_write_nothing"] = bool(worst_probe < 1.0)
     c = out["cells"]
-    out["P1a_pass"] = all(c[f"{w}_s0.04_closed"]["read_loo_nu0.01"] >= 0.90 for w in ("scour", "exner"))
-    out["P1b_pass"] = all(c[f"{w}_s0.04_open"]["read_loo_nu0.01"] <= 0.65 for w in ("scour", "exner"))
-    out["P1c_pass"] = all(c[f"{w}_s0.005_closed"]["read_loo_nu0.05"] <= 0.75 for w in ("scour", "exner"))
+    out["P1a_pass"] = bool(all(c[f"{w}_s0.04_closed"]["read_loo_nu0.01"] >= 0.90 for w in ("scour", "exner")))
+    out["P1b_pass"] = bool(all(c[f"{w}_s0.04_open"]["read_loo_nu0.01"] <= 0.65 for w in ("scour", "exner")))
+    out["P1c_pass"] = bool(all(c[f"{w}_s0.005_closed"]["read_loo_nu0.05"] <= 0.75 for w in ("scour", "exner")))
     json.dump(out, open("results/g1.json", "w"), indent=1)
     print({k: v for k, v in out.items() if k != "cells"})
 

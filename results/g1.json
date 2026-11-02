@@ -1,0 +1,68 @@
+{
+ "cells": {
+  "scour_s0.005_closed": {
+   "sand_AB_BA_mean_norm": 0.1223231555195539,
+   "sand_upper_bound": 0.5208333333333334,
+   "read_loo_nu0.01": 0.5208333333333334,
+   "read_loo_nu0.05": 0.46875
+  },
+  "scour_s0.01_closed": {
+   "sand_AB_BA_mean_norm": 0.4329000416898519,
+   "sand_upper_bound": 0.59375,
+   "read_loo_nu0.01": 0.6145833333333334,
+   "read_loo_nu0.05": 0.625
+  },
+  "scour_s0.02_closed": {
+   "sand_AB_BA_mean_norm": 0.988381065965707,
+   "sand_upper_bound": 0.8020833333333334,
+   "read_loo_nu0.01": 0.5625,
+   "read_loo_nu0.05": 0.5833333333333334
+  },
+  "scour_s0.04_closed": {
+   "sand_AB_BA_mean_norm": 1.9561778089639859,
+   "sand_upper_bound": 0.9791666666666666,
+   "read_loo_nu0.01": 0.59375,
+   "read_loo_nu0.05": 0.6458333333333334
+  },
+  "scour_s0.04_open": {
+   "sand_AB_BA_mean_norm": 3.34179827111845e-15,
+   "sand_upper_bound": 0.5,
+   "read_loo_nu0.01": 0.5104166666666666,
+   "read_loo_nu0.05": 0.5
+  },
+  "exner_s0.005_closed": {
+   "sand_AB_BA_mean_norm": 0.033802340029689446,
+   "sand_upper_bound": 0.5104166666666666,
+   "read_loo_nu0.01": 0.5,
+   "read_loo_nu0.05": 0.4895833333333333
+  },
+  "exner_s0.01_closed": {
+   "sand_AB_BA_mean_norm": 0.11465292464896791,
+   "sand_upper_bound": 0.5104166666666666,
+   "read_loo_nu0.01": 0.5,
+   "read_loo_nu0.05": 0.5104166666666666
+  },
+  "exner_s0.02_closed": {
+   "sand_AB_BA_mean_norm": 0.34752004950200804,
+   "sand_upper_bound": 0.6145833333333334,
+   "read_loo_nu0.01": 0.5104166666666666,
+   "read_loo_nu0.05": 0.5
+  },
+  "exner_s0.04_closed": {
+   "sand_AB_BA_mean_norm": 1.0008182395365257,
+   "sand_upper_bound": 0.65625,
+   "read_loo_nu0.01": 0.4375,
+   "read_loo_nu0.05": 0.4791666666666667
+  },
+  "exner_s0.04_open": {
+   "sand_AB_BA_mean_norm": 0.11293624326784718,
+   "sand_upper_bound": 0.5,
+   "read_loo_nu0.01": 0.5,
+   "read_loo_nu0.05": 0.5208333333333334
+  }
+ },
+ "note": "Rebuilt from results/g1.log: the run finished every cell, then crashed writing JSON (numpy bool). worst_probe_stress was not logged; it is recomputed in posthoc_g1_diffread.py.",
+ "P1a_pass": false,
+ "P1b_pass": true,
+ "P1c_pass": true
+}
