@@ -82,11 +82,41 @@ but did not test the tour law. What the data does show:
 | sliding [100,200) / [200,300) / [350,450) / [500,600) | 0.64 / **0.74** / 0.63 / 0.57 |
 | exner, any window | ≤ 0.58 (W3 pass) |
 
-The order information sits **just after first arrival** and dilutes with later
-reverberation. That is the tour-law shape measured from arrival, and it is
-post-hoc-on-post-hoc. Even the best window reaches 0.75, not Sol's 0.97, so the
+The order information seemed to sit **just after first arrival** and dilute with later
+reverberation. That looked like the tour-law shape measured from arrival, but it was
+post-hoc-on-post-hoc, and **it did not replicate** in pre-registered G4 on fresh beds
+(arrival-early 0.64 vs whole transient 0.75). Even the best window reaches 0.75, not Sol's 0.97, so the
 window is only part of the gap. The other part is probably 3112 writable floor
 values versus Sol's 8 wall patches.
+
+### G4: the floor on the shared benchmark ([PREREG_G4G5.md](PREREG_G4G5.md), fresh beds 300–347)
+
+The split was agreed with Sol: Sol scales Robin wall patches (K = 8…48), and this repo
+covers the distributed floor. Sol also proposed **ABX vs BAX**: an identical final wave
+X after both orders. That checks that the reader isn't just recognising whichever wave
+came last. Measured arrivals: west 202, north 92, south 116 steps.
+
+| history | sand | R1 steady swell | R2 whole transient | R3 early (arrival + 0–100) | R4 late (arrival + 300–400) |
+|---|---|---|---|---|---|
+| AB vs BA | 0.98 | 0.64 | **0.75** | 0.64 | 0.54 |
+| ABX vs BAX, X × 0.5 | 0.99 | 0.64 | **0.73** | 0.52 | 0.59 |
+| ABX vs BAX, X × 1 | 0.99 | 0.55 | **0.74** | 0.54 | 0.55 |
+| ABX vs BAX, X × 2 | **1.00** | 0.65 | **0.70** | 0.56 | 0.66 |
+
+- **P4a PASS**: the transient read replicates on fresh beds (0.75), early > late.
+- **P4b FAIL**: the arrival-early window is *not* better than the steady swell in every
+  condition. The "order lives just after first arrival" reading from the post-hoc window
+  run does **not** replicate. The whole transient is the best reader everywhere.
+- **P4c PASS**: a common final wave does not erase the order in the sand. The sand
+  decoder stays 0.99–1.00 even when X is twice as strong. The floor holds the
+  *sequence*, not just the last event.
+- **P4d PASS** (barely: 0.05 drop): a stronger X makes the order harder to read,
+  0.75 → 0.70.
+
+Reads were nondestructive throughout (worst probe 0.19 σ_c). So for a distributed floor:
+order is stored almost perfectly, survives overwriting, and is readable at about 0.70–0.75
+with no single privileged time window. Sol's 8 patches read at 0.97. If Sol's K-sweep
+shows readability falling as K grows, the gap is the dimension of the writable state.
 
 ## G2: does the sand compute a gradient?
 
