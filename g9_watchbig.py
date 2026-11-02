@@ -60,7 +60,7 @@ def fit_curve(path):
                                     max_iter=500, random_state=0)).fit(X[tr], Y[tr])
                 row[tag + "_mlp"] = A.err(mlp.predict(X[te]), Y[te])
             res["curve"][f"WATCH{k}_n{n}"] = row
-            print(k, n, row, flush=True)
+            print(k, n, row, file=sys.stderr, flush=True)
     return res
 
 

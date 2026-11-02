@@ -13,6 +13,14 @@ tests three things with pre-registered gates ([PREREG.md](PREREG.md), pushed as
 
 Built by Claude (Opus 5.5).
 
+**Latest (G9): is a self-written bed worth more than stored weights?** Yes, in one bounded way.
+Storms hit the beach while nothing is switched on. Pinging it afterwards from 5 ports localizes
+them to about 5 cells. Ordinary-weight memories that *were* watching do much worse: 16–19 cells
+for 5 sensors, 11–13 for 64 sensors, and 8 cells after 40× the calibration data. The edge comes
+from interrogating the record in a band of the reader's choosing. It vanishes if the digital side
+has a decent model of the basin (5 sensors, bed known to ±0.01–0.03 → 0–5 cells), 20 interior sensors
+(1 cell with any model), or broadband events. [Details below](#g9-is-a-self-written-bed-worth-more-than-stored-weights-prereg_g9md).
+
 ![summary](results/summary.png)
 
 ## Beaches as attention ([attention.html](attention.html))
@@ -369,6 +377,121 @@ On Sol's other point: in dB, G7's loud task was +6.6 dB for the sliding threshol
 isn't**. It works with an agent that broadcasts one scalar and can undo a step, at the cost of
 many trials. A real beach has the storms but not the agent.
 
+## G9: is a self-written bed worth more than stored weights? ([PREREG_G9.md](PREREG_G9.md))
+
+Sol's question (2 Nov 2026): does making the operator *physically self-modifying* give us
+something useful that we couldn't get as cheaply by storing and updating ordinary weights?
+
+G1–G8 already said no for **learning** (teacher waves die under loss, thresholds go stale,
+trials need an agent) and for **symbol memory** (one order bit is 2 numbers with a decay;
+the floor reads it at 0.70–0.75). So G9 tests the one cost ordinary weights always pay and the
+sand doesn't: **a weight only changes if a sensor is on and watching**, and it keeps only what
+that sensor heard, in the band it heard it. The sand is written by the event with nothing on,
+and the record is an operator change you can ping later, in any band, from any port.
+
+**Task.** A storm (steady Gaussian forcing, σ 2.5 cells, one of 16 frequencies, random strength)
+hits a fresh copy of the bed somewhere in the interior (2276 candidate cells), with this cavity's
+loss (Q ≈ 67) and G4's strongest scour. Where did it hit? Median location error in cells on 200
+test storms. Chance ≈ 19–21. Every reading carries 1 % noise. Data-driven arms all get the same
+decoder search (ridge / kNN / RBF kernel ridge, and binned or pooled memory for watchers, chosen by
+inner CV). Beds 1000–1002 were held out; dev was 950–951. `beach/watch.py`, `g9_*.py`.
+
+### Data-driven memories, n_train = 800 (H1, three beds)
+
+| memory | on during the storm | bed 1000 | 1001 | 1002 |
+|---|---|---|---|---|
+| SAND, the bed itself (unreadable upper bound) | nothing | 3.0 | 2.8 | 2.9 |
+| **BEACH5**: pings after − before, 5 ports, 16 freqs | **nothing** | **5.3** | **5.5** | **5.0** |
+| BEACH2: G1's read (south → 2 harbours) | nothing | 6.4 | 8.0 | 7.3 |
+| WATCH5: 5 port sensors, frozen bed, Hebbian C += x xᴴ | 5 sensors | 18.8 | 16.2 | 17.5 |
+| WATCH2 / WATCH1 | 2 / 1 | 20.8 / 20.6 | 18.5 / 19.4 | 19.1 / 18.4 |
+| DENSE20 / DENSE64: 5 ports + interior sensors, frozen bed | 20 / 64 | 15.0 / 13.4 | 15.0 / 11.3 | 15.0 / 12.4 |
+| WATCH5d: 5 sensors listening while the bed is dug | 5 sensors + the sand | 13.0 | 11.9 | 13.3 |
+| chance | | 20.9 | 19.3 | 18.7 |
+
+The 5-port watcher with **more data** (bed 1000, idealised frozen basin, `g9_watchbig.py`): 17.1 at
+400 storms, 15.2 at 1600, 12.2 at 6400, **8.0 at 16 000** (MLP), still worse than BEACH5 at 400 (6.7).
+
+### Matched field with a model of the basin (no training storms; `g9_mfp.py`)
+
+5 port sensors, single-tone storms, median error (beds 1000 / 1001 / 1002):
+
+| the model the digital watcher believes | error |
+|---|---|
+| exact bed | 0 / 0 / 0 |
+| bed ± 0.01 (smooth error; roughness sd is 0.06) | 0 / 0 / 0 |
+| bed ± 0.03 | 1.4 / 5.2 / 4.9 |
+| bed ± 0.06 | 21 / 15 / 18 |
+| flat bed, or a different random bed | 17–19 |
+
+With **20 sensors** (5 ports + 15 interior) every model works, flat bed included: 1.0–1.4. With
+**4-tone storms** (H4), 5 ports and a flat-bed model get 1.0, against BEACH5's 3.9.
+
+### Predictions
+
+| | | result |
+|---|---|---|
+| P9a | BEACH5 ≤ 0.6 × WATCH5, n 400 and 800, all beds | **PASS** (ratios 0.28–0.45) |
+| P9b | BEACH5 beats 64 always-on sensors (data-driven), ≥ 2/3 beds | **PASS** 3/3 |
+| P9c | 5-port watcher at 16 000 storms still worse than BEACH5 at 400 | **PASS** (8.0 vs 6.7) |
+| P9d | reading at the storm's own frequency ≥ 2 × worse than at one fixed frequency | **FAIL** on one bed: ratios 2.19, **1.95**, 2.00 |
+| P9e | unseen storm frequencies cost ≤ 25 % | **PASS** (6.0→6.8, 6.1→6.4, 6.5→5.7) |
+| P9f | weak writes (s = 0.01) keep the edge | **PASS** (6.7 vs 16.3; 4.9 vs 16.2) |
+| P9g | an exact model, 5 ports: ≤ 1 cell | **PASS** (0 on all beds) |
+| P9h | 5 ports: a flat model loses to the beach, a ±0.03 model beats it | **PASS** (bed 1002 by 0.01 cell: 4.95 vs 4.96) |
+| P9i | 20 sensors, flat model ≤ 3 cells | **PASS** (1.0) |
+| P9j | broadband storms: 5 ports + flat model beat the beach | **PASS** (1.0 vs 3.9) |
+| P9k | one storm frequency helps the watcher but not enough | **PASS** (13.5 vs 18.0; beach 5.5) |
+
+P9d's mechanism holds in direction on every bed (19.0 vs 8.7, 18.9 vs 9.7, 18.5 vs 9.3): a read in
+the storm's own band is nearly useless, and a read in one fixed band works. That's what the record
+buys. But my 2× bar was missed on bed 1001.
+
+**Verdict, by the registered rule: yes, in a bounded regime.** A self-written medium gives one
+thing ordinary weights can't get as cheaply: **a record nobody had to watch, which can later be
+interrogated in a band of the reader's choosing.** The storm writes its location into the sand
+in whatever band it came in, and a fixed set of pings reads it back in the same 16 bands every
+time. So one calibration covers all storm frequencies, including unseen ones. A watcher stores what it
+heard in the storm's band, so it has to learn a separate reverberant fingerprint map per band.
+Even 64 always-on sensors, or 40× the calibration data, didn't catch up.
+
+The edges, all measured:
+- **A good model wins.** If you know the bed to within about half its own roughness, 5 watching
+  sensors and matched-field processing localize exactly with zero calibration storms.
+- **Sensors inside win.** With 20 sensors, even a flat-bed model is enough (1 cell).
+- **Broadband events win.** A 4-tone storm gives the watcher 4 fingerprints, and a crude model then
+  beats the beach.
+- **Not registered, from H2:** with only one storm frequency, 20 data-driven sensors reached 3.2
+  cells at n = 800, beating the beach's 4.0. The beach's edge over data-driven sensors is mostly the
+  invariance across storm bands.
+
+So the niche is: **nothing can be powered during the event, the medium can't be modelled well,
+and events are narrowband.** That's the niche of passive damage recorders (impact damage in
+composites, read later by guided ultrasonic waves), which is an existing field, not a new one.
+
+Two things I didn't expect:
+- **Self-modification also helps a watcher.** Sensors listening *while the sand is dug* (WATCH5d)
+  localize at 12–13 cells against 16–19 in a frozen bed. The dig reshapes the field the sensors hear.
+- In the weak-write run (H3), the storms were the same storms as H1 bed 1001, because the seed rule
+  only changes with tones and frequency count. That makes H3 a paired comparison. Weaker writes did not
+  hurt the beach: 5.5 → 4.9 at n = 800, slightly better.
+
+A bookkeeping bug: `g9_watchbig.py fit` printed its progress lines to stdout, into the JSON file
+the summary reads, so `g9_summary.py` crashed. I stripped the progress lines from `big_1000.json`
+(the JSON block itself was untouched) and moved the prints to stderr.
+
+### Cost ledger, per storm
+
+| memory | powered during the event | what is stored | digital work per event | calibration | model |
+|---|---|---|---|---|---|
+| BEACH5 | **0** | 3112 sand cells (physical) | 0 (physics); later 3 pings × 16 bands | 400–800 storms | none |
+| WATCH5, data-driven | 5 sensors | 16 bins × 27 reals | a 5×5 outer product per sample | fails even at 16 000 | none |
+| DENSE64, data-driven | 64 sensors | 16 × 128 reals | 64-vector per sample | fails at 800 | none |
+| matched field, 5 ports | 5 sensors | model (3112) + replicas (16 × 2276 × 5 complex) | 16 solves once, then 2276 × 5 MACs | 0 | bed to ±0.01–0.03 |
+| matched field, 20 sensors | 20 sensors | model + replicas | 16 solves once, then 2276 × 20 MACs | 0 | any (flat is fine) |
+
+In simulation, the beach's "free" write costs 10 sparse solves per storm. It is free only in hardware.
+
 ## G3: can the beach learn to route?
 
 Two swells from the west: ω₁ should reach harbourN and ω₂ harbourS. Five beds, 300
@@ -412,6 +535,11 @@ looks like.
   0.99), and trains the quiet-harbour task to 92 % of exact descent, lossless.
 - Under this cavity's loss, trial-and-keep with storm-shaped trials learns on 8/8 beds
   (−19.6 dB quiet, +8.0 dB loud), beating white noise; it needs a global scalar and undo (G8b).
+- An unwatched storm's location is recorded in the sand and read back by pings from 5 ports
+  (5.0–5.5 cells, 3 held-out beds). Data-driven ordinary-weight memories that were watching do
+  worse: 5 sensors 16–19, 64 sensors 11–13. The record generalises to unseen storm bands (G9).
+- A digital watcher with a model of the basin beats the beach: exact model, 5 sensors, 0 cells.
+  ±0.03 bed error still wins, as does any model with 20 sensors, or broadband storms (G9).
 
 **Failed**
 - Reading order back with pings (P1a); quadratic order growth (P1d).
@@ -423,6 +551,8 @@ looks like.
 - G5's β = 0.03 teacher was 1.5× the forward swell, not weak (found in G7's dev runs).
 - "An open beach fixes the loss wall" (my G5/G7 conclusion): wrong. Total loss sets the
   limit, and a truly open beach is the worst case (G8a, −0.18).
+- P9d: reading at the storm's own band was 1.95× worse than reading at one fixed band on bed 1001,
+  against a 2× bar (2.19 and 2.00 on the other beds).
 
 **Bugs found on the way**
 - G1's `history()` never applied `ampB`, so swell B ran at amplitude 1, not the
@@ -453,6 +583,7 @@ python posthoc_g3_lowloss.py 0.0005 0.001
 python g6_compliance.py               # ~1 min
 python g7_sliding.py                  # ~3 min
 python g8_open_and_trial.py a         # ~2 min;  b: ~10 min
+./run_g9.sh && ./run_g9_analyse.sh       # G9, ~1.5 h on 2 cores; writes results/g9.json
 python make_figures.py
 node tests/check_js.mjs              # the web page's physics against the Python
 node tests/check_crossbar.mjs        # attention.html's crossbar algebra

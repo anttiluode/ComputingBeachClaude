@@ -1,0 +1,77 @@
+{
+ "seed": 1000,
+ "curve": {
+  "WATCH5_n400": {
+   "CHANCE": 18.748269372715285,
+   "binned": 18.096003536972663,
+   "binned_decoder": "ridge",
+   "binned_mlp": 21.415434332438917,
+   "pooled": 17.053019810588253,
+   "pooled_decoder": "ridge",
+   "pooled_mlp": 17.88882177679732
+  },
+  "WATCH5_n1600": {
+   "CHANCE": 18.688204026996672,
+   "binned": 16.047071442252403,
+   "binned_decoder": "ridge",
+   "binned_mlp": 15.222525534263124,
+   "pooled": 16.099724099623742,
+   "pooled_decoder": "krr",
+   "pooled_mlp": 16.021612341020987
+  },
+  "WATCH5_n6400": {
+   "CHANCE": 18.58492440229614,
+   "binned": 12.240914998479488,
+   "binned_decoder": "knn",
+   "binned_mlp": 12.2883841485337,
+   "pooled": 15.327425509779507,
+   "pooled_decoder": "knn",
+   "pooled_mlp": 14.855126220617286
+  },
+  "WATCH5_n16000": {
+   "CHANCE": 18.646556369410803,
+   "binned": 8.359957469322971,
+   "binned_decoder": "knn",
+   "binned_mlp": 8.026924879301172,
+   "pooled": 12.437041032981416,
+   "pooled_decoder": "knn",
+   "pooled_mlp": 13.052338070530194
+  },
+  "WATCH2_n400": {
+   "CHANCE": 18.748269372715285,
+   "binned": 18.683769571208114,
+   "binned_decoder": "ridge",
+   "binned_mlp": 19.524727306556976,
+   "pooled": 18.47473356744537,
+   "pooled_decoder": "ridge",
+   "pooled_mlp": 18.719626606736426
+  },
+  "WATCH2_n1600": {
+   "CHANCE": 18.688204026996672,
+   "binned": 18.14045774545542,
+   "binned_decoder": "ridge",
+   "binned_mlp": 18.687359627090416,
+   "pooled": 18.088578464983883,
+   "pooled_decoder": "krr",
+   "pooled_mlp": 18.391140491667947
+  },
+  "WATCH2_n6400": {
+   "CHANCE": 18.58492440229614,
+   "binned": 17.774715462503305,
+   "binned_decoder": "ridge",
+   "binned_mlp": 18.140243024017998,
+   "pooled": 18.39852479525656,
+   "pooled_decoder": "ridge",
+   "pooled_mlp": 18.08681764473615
+  },
+  "WATCH2_n16000": {
+   "CHANCE": 18.646556369410803,
+   "binned": 17.97827336624985,
+   "binned_decoder": "ridge",
+   "binned_mlp": 17.215126533879864,
+   "pooled": 16.954350474140846,
+   "pooled_decoder": "knn",
+   "pooled_mlp": 17.83788019597295
+  }
+ }
+}
