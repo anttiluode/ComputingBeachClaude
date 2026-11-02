@@ -1,0 +1,27 @@
+scour cumulative 100 0.375
+scour cumulative 150 0.53125
+scour cumulative 200 0.5833333333333334
+scour cumulative 300 0.6666666666666666
+scour cumulative 450 0.6770833333333334
+scour cumulative 600 0.75
+scour sliding 100 0.5104166666666666
+scour sliding 150 0.5833333333333334
+scour sliding 200 0.6354166666666666
+scour sliding 300 0.7395833333333334
+scour sliding 450 0.625
+scour sliding 600 0.5729166666666666
+exner cumulative 100 0.3854166666666667
+exner cumulative 150 0.5
+exner cumulative 200 0.4375
+exner cumulative 300 0.4479166666666667
+exner cumulative 450 0.53125
+exner cumulative 600 0.4791666666666667
+exner sliding 100 0.53125
+exner sliding 150 0.5625
+exner sliding 200 0.5
+exner sliding 300 0.5625
+exner sliding 450 0.4375
+exner sliding 600 0.5833333333333334
+{'W1_pass': False, 'W2_pass': False, 'W3_pass': True}
+
+[exited with code 0]

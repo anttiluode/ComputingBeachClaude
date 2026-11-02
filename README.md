@@ -65,6 +65,29 @@ P1d slope failure is the same fact seen from the write side: even the weakest wr
 past the perturbative regime. Reads were confirmed nondestructive: the worst probe
 stress was 0.27 σ_c.
 
+**Listening window (post hoc, after Sol's [ComputingBeachSol](https://github.com/anttiluode/ComputingBeachSol)
+read order at 0.97 with windowed time-domain echoes from 8 writable wall patches).**
+[posthoc_g1_window.py](posthoc_g1_window.py) reads the same G1 beds with time-domain
+pings from three ports, in cumulative and sliding windows. Its predictions were
+written before running (`1dce5b8`), and two of them failed for a reason I should have
+caught. I timed the windows on WallMemoryLaw's wave speed, but this bed is about 0.7
+deep, so waves are about 16 % slower. First arrivals at the harbours are at steps
+90–211, so windows ending at 100–200 hold mostly silence. W1 and W2 fail as registered
+but did not test the tour law. What the data does show:
+
+| scour, s = 0.04 | read accuracy |
+|---|---|
+| steady-state swells (G1, infinite window) | 0.59 |
+| time-domain pings, [0, 600) | **0.75** |
+| sliding [100,200) / [200,300) / [350,450) / [500,600) | 0.64 / **0.74** / 0.63 / 0.57 |
+| exner, any window | ≤ 0.58 (W3 pass) |
+
+The order information sits **just after first arrival** and dilutes with later
+reverberation. That is the tour-law shape measured from arrival, and it is
+post-hoc-on-post-hoc. Even the best window reaches 0.75, not Sol's 0.97, so the
+window is only part of the gap. The other part is probably 3112 writable floor
+values versus Sol's 8 wall patches.
+
 ## G2: does the sand compute a gradient?
 
 The physical teacher is a swell sent back from the output harbour with amplitude set
