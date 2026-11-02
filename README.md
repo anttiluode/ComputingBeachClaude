@@ -258,6 +258,76 @@ So a sliding threshold **removes the subtraction wall** for a weak teacher and a
 walk. It does **not** remove the loss wall, and it has a range: the bed can only move so far
 before its memory of "normal" is out of date.
 
+### G8: does an open beach fix the loss wall? Does trial-and-keep get past it? ([PREREG_G8.md](PREREG_G8.md))
+
+**(a) Sol's challenge.** After G7 I said an open beach (loss as radiation out of the domain,
+once per pass) was the next thing. Sol objected that escaping energy is still loss. The
+derivation agrees with Sol: the sand feels Re(∇η·conj ∇τ), so the teacher would have to
+travel under conj(A), the time-reversed medium **with gain where the real one has loss**.
+Passive loss anywhere breaks that. The test asks how much the *location* matters at equal
+total loss. `beach/open.py` adds absorbing sponges: an **east** beach face beyond the
+harbours, or the whole **rim** (open water). Q is measured by ring-down. Fresh beds
+700–707, both tasks, β = 0.003, single exposure minus habit (G7's epoch-1 cosine).
+
+| loss | Q | median cos | interquartile |
+|---|---|---|---|
+| bulk 0.0006 | 659 | 0.82 | 0.09 … 0.98 |
+| east sponge 0.05 | 694 | **0.93** | 0.07 … 0.97 |
+| bulk 0.0016 | 248 | 0.33 | −0.20 … 0.84 |
+| east sponge 0.3 | 278 | 0.22 | −0.12 … 0.49 |
+| bulk 0.002 | 199 | 0.28 | −0.06 … 0.73 |
+| east sponge 1.0 | 226 | 0.21 | −0.15 … 0.50 |
+| bulk 0.006 (this cavity) | 67 | 0.31 | −0.17 … 0.40 |
+| rim sponge 0.05 | 65 | 0.06 | −0.21 … 0.35 |
+| rim sponge 0.3 (truly open) | 18 | **−0.18** | −0.23 … −0.12 |
+
+- **P8a FAIL**, in one pair: at high Q a small absorbing beach face did *better* than the
+  same Q spread through the water (0.93 vs 0.82). In the other three pairs the sponge was
+  worse (by 0.07–0.25).
+- **P8b PASS**: a truly open beach kills the physical teacher (−0.18).
+- **P8c**: Spearman ρ(Q, cos) = 0.80, exactly the registered bar (as a rank statistic it is
+  1 − 6·24/720 = 0.8). The script's float comparison scored it 0.79999… and wrote
+  `false`. By the written rule it is a pass at the boundary, so I'm calling it borderline.
+- Dev beds overstated mid-Q alignment (bulk Q ≈ 250: 0.88 on dev, 0.33 here). Bed-to-bed
+  spread is large at every loss.
+
+**Verdict: Sol is right.** Total loss sets the limit. Where the loss sits changes it a little,
+in either direction. An open beach is a low-Q beach, which is the worst case for a teacher
+wave. My "open beach next" was wrong.
+
+**(b) Learning without a teacher.** If no teacher wave survives loss, try ObjektiYksi's rule:
+perturb the bed, measure the harbour, keep the change if it helped, otherwise revert.
+No adjoint, so loss can't scramble anything. What it needs, and sand doesn't have by itself:
+a global better/worse signal and a way to undo, i.e. **an agent**. `beach/trial.py`.
+This cavity's loss (0.006, Q ≈ 67), where every teacher method failed. 200 trials,
+max |Δs| = 0.005. Perturbations: **white** noise, **smooth** noise, **storm** (the scour
+pattern of a random swell from a random port and frequency, random sign), and **exner**
+(the same storm, conservative). Median dB of |y| at harbourN, 8 fresh beds:
+
+| task | exact GD, best point | white | smooth | **storm** | exner |
+|---|---|---|---|---|---|
+| quiet (lower) | −62.4 | −5.0 | −46.9 | **−19.6** | −2.9 |
+| loud (raise) | +31.0 | +3.1 | +11.5 | **+8.0** | +1.7 |
+
+- **P8d PASS**: storm trials learn where every teacher method failed. Right direction by at
+  least 3 dB on 8/8 beds in both tasks (worst bed −3.3 dB quiet, +4.6 dB loud).
+- **P8e PASS**: wave-shaped trials beat white noise in both tasks. A storm only proposes changes the
+  waves can feel, which is a far smaller space than 3112 independent cells.
+- **P8f PASS**: conservative storms do worse again (−2.9 / +1.7 dB). Sand that must come from
+  somewhere couples neighbours. That's the fourth time conservation has cost us here.
+- **P8g PASS**: trials are poor at hunting resonances: +8 dB against GD's +31 dB.
+- Not predicted: plain smooth noise beat storms in both tasks (−46.9 vs −19.6 quiet, +11.5 vs
+  +8.0 loud). Storms are better than white noise but not the best proposal shape.
+  A bug fix during the run: a list-valued key ending in `_db` crashed the summary print
+  before any result was written. It was renamed; the protocol didn't change.
+
+On Sol's other point: in dB, G7's loud task was +6.6 dB for the sliding threshold against
++3.0 dB for plain sand, lossless, in 20 epochs. That is a real gain, even if f was small.
+
+**What G8 says.** Under loss, learning from a teacher wave is gone, but **learning by trial
+isn't**. It works with an agent that broadcasts one scalar and can undo a step, at the cost of
+many trials. A real beach has the storms but not the agent.
+
 ## G3: can the beach learn to route?
 
 Two swells from the west: ω₁ should reach harbourN and ω₂ harbourS. Five beds, 300
@@ -299,6 +369,8 @@ looks like.
 - A sliding threshold (sand that erodes above its habitual stress and deposits below it)
   turns one weak-teacher exposure into a gradient step with no code subtraction (G7, cos
   0.99), and trains the quiet-harbour task to 92 % of exact descent, lossless.
+- Under this cavity's loss, trial-and-keep with storm-shaped trials learns on 8/8 beds
+  (−19.6 dB quiet, +8.0 dB loud), beating white noise; it needs a global scalar and undo (G8b).
 
 **Failed**
 - Reading order back with pings (P1a); quadratic order growth (P1d).
@@ -308,6 +380,8 @@ looks like.
   stale within ~5–10 epochs. And at this cavity's loss, sliding threshold learning, like
   every teacher method here, does nothing (P7g).
 - G5's β = 0.03 teacher was 1.5× the forward swell, not weak (found in G7's dev runs).
+- "An open beach fixes the loss wall" (my G5/G7 conclusion): wrong. Total loss sets the
+  limit, and a truly open beach is the worst case (G8a, −0.18).
 
 **Bugs found on the way**
 - G1's `history()` never applied `ampB`, so swell B ran at amplitude 1, not the
@@ -319,7 +393,6 @@ looks like.
 
 **Not done**
 - Sol's step 4: WallMemoryLaw's tour law on continuous sand.
-- An open beach, where loss is radiation out of the domain, not bulk damping.
 - Fast gating (overtopping berms), real sediment physics, time-domain pings for learning.
 - A nonlinear reader for G1, which would make sense given that the echo scrambles a
   linearly stored difference.
@@ -338,6 +411,7 @@ PYTHONPATH=. python posthoc_g3_alignment.py
 python posthoc_g3_lowloss.py 0.0005 0.001
 python g6_compliance.py               # ~1 min
 python g7_sliding.py                  # ~3 min
+python g8_open_and_trial.py a         # ~2 min;  b: ~10 min
 python make_figures.py
 node tests/check_js.mjs              # the web page's physics against the Python
 ```

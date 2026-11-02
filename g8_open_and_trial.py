@@ -90,7 +90,7 @@ def part_b():
             for f in FAMS:
                 r = keep_or_revert(t.J, bch, sand, f, TRIALS, STEP, seed)
                 row[f + "_db"], row[f + "_kept"] = db(r["J"][-1]), r["kept"]
-                row[f + "_curve_db"] = [db(J) for J in r["J"][::10]]
+                row[f + "_curve"] = [db(J) for J in r["J"][::10]]
             beds.append(row)
             print("b", tname, seed, " ".join(f"{k}:{v:+.1f}" for k, v in row.items() if k.endswith("_db")), flush=True)
         med = {k: float(np.median([b[k] for b in beds])) for k in beds[0] if k.endswith("_db")}
