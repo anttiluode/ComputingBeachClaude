@@ -1,0 +1,13 @@
+{
+ "G0a_max_abs_diff_vs_WallMemoryLaw": 1.0436096431476471e-14,
+ "G0a_pass": true,
+ "G0b_rel_err_raw_incl_zero_mode": 0.12212943458478354,
+ "G0b_zero_mode_offset": 0.20211215584262593,
+ "G0b_rel_err_steady_state": 1.088006793659721e-06,
+ "G0b_pass": true,
+ "G0c_fd_vs_adjoint_max_rel": 2.1215737126611324e-08,
+ "G0c_pass": true,
+ "G0d_cos_time_avg_cross_vs_formula": 0.9999663535423737,
+ "G0d_rel_err": 0.008203931740816241,
+ "G0d_pass": true
+}
