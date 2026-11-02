@@ -1,0 +1,2 @@
+scour_s0.005_closed {'sand_AB_BA_mean_norm': 0.1223231555195539, 'sand_upper_bound': 0.5208333333333334, 'read_loo_nu0.01': 0.5208333333333334, 'read_loo_nu0.05': 0.46875}
+scour_s0.01_closed {'sand_AB_BA_mean_norm': 0.4329000416898519, 'sand_upper_bound': 0.59375, 'read_loo_nu0.01': 0.6145833333333334, 'read_loo_nu0.05': 0.625}
