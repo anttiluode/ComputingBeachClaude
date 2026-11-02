@@ -492,6 +492,20 @@ the summary reads, so `g9_summary.py` crashed. I stripped the progress lines fro
 
 In simulation, the beach's "free" write costs 10 sparse solves per storm. It is free only in hardware.
 
+### Post hoc: two archive ideas for the readout gap (both negative)
+
+The floor stores order at 0.98–1.00 but pings read it at 0.70–0.80. Two ideas from other repos,
+tried on fresh beds 1100–1131 ([posthoc_write_to_read.py](posthoc_write_to_read.py),
+[json](results/posthoc_write_to_read.json)); not registered:
+- **Write to read** (ReadWrite: a known write separates states passive reads can't, when the write
+  depends on the state). A probe storm's write *does* depend on the history here, but reading its
+  effect gives 0.77 / 0.72 against 0.80 passive. Even the probe's sand change itself carries the
+  order at only 0.83. No gain.
+- **Evening's reader** (log-power spectral bands, which read scout order at 1.000 there): 0.52–0.69.
+  In Evening the histories differed in the *distribution* of material. Here mean and quantiles of
+  the sand don't separate AB from BA (0.52–0.55), so the order is in the spatial pattern, which no
+  cross-bed reader has generalised. A per-bed calibrated reader (G9's setting) is the untested route.
+
 ## G3: can the beach learn to route?
 
 Two swells from the west: ω₁ should reach harbourN and ω₂ harbourS. Five beds, 300

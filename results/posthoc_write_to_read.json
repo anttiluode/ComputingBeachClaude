@@ -1,0 +1,6 @@
+{"note": "post hoc pilot, not registered. Fresh beds 1100-1131, 64 LOO-bed decisions, G4 decoder, 1% noise.",
+ "passive_pings_whole_transient": 0.797, "passive_steady": 0.594,
+ "write_probe_X_delta_pings": 0.766, "write_probe_harbourN_delta_pings": 0.719, "both_deltas": 0.797, "passive_plus_deltas": 0.734,
+ "sand_upper_bound": 1.0, "probe_write_sand_change_X": 0.828, "probe_write_sand_change_harbourN": 0.719,
+ "evening_logpower_reader_passive_12_24_bands": [0.516, 0.688], "evening_logpower_reader_dX": [0.656, 0.594],
+ "mean_sand": 0.547, "sand_quantiles": 0.516}
