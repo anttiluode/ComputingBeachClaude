@@ -115,6 +115,40 @@ by the time forward and teacher meet. Prior art: in-situ photonic backprop (Pai 
 2023) and Hamiltonian echo backpropagation (López-Pastor & Marquardt 2023) assume, or
 engineer, the lossless/time-reversible case. This measures what happens when you don't.
 
+### G5: the physical teacher, and no subtraction in code ([PREREG_G4G5.md](PREREG_G4G5.md))
+
+Sol's review (`ComputingBeachSol`) pointed out that the 0.989 above comes from
+writer(u + λ) − writer(u − λ), and that **the code, not the sand, does that subtraction**.
+A real beach with the teacher on only ever does writer(u + τ). G5 measures that single
+exposure, and the field the physical teacher actually makes, against the exact adjoint.
+Eight fresh beds, β = 0.03, no threshold.
+
+| damping | phase error, physical teacher vs conj(adjoint) | cos(natural, −g) | cos(teacher on, −g) | on beats natural (direction) | on lowers loss more |
+|---|---|---|---|---|---|
+| 0 | **1e-12 rad** | −0.24 | +0.16 | 8/8 | **3/8** |
+| 0.0005 | 1.33 rad | +0.17 | +0.19 | 6/8 | 3/8 |
+| 0.002 | 1.48 rad | −0.08 | −0.02 | 6/8 | 6/8 |
+| 0.006 | 1.56 rad | −0.14 | −0.11 | 5/8 | 5/8 |
+
+- **P5a PASS**: lossless, the injected teacher swell *is* the conjugate adjoint, to 1e-12 rad.
+- **P5b PASS**: phase error grows with loss, reaching 1.56 rad at this cavity's loss.
+  That is about π/2, the mean of a random phase: the teacher's phase no longer has
+  anything to do with the adjoint's. Caveat: at 0.0005 the field phase error is already
+  1.33 rad, while the update alignment there (post-hoc G2) was still 0.98. So this
+  field-wise metric is harsher than what the update feels. Near-resonant modes flip
+  phase under tiny loss but carry little of the cross term.
+- **P5c PASS**: at 0.006 a single teacher exposure is no better than none (−0.11 vs −0.14).
+- **P5d FAIL**: lossless, the sand's own on − natural difference aligns at only 0.82
+  (the teacher's self-term). The physical clause is the telling one: the teacher tilts
+  the step the right way on 8/8 beds, but that step lowers the loss more than plain
+  scour on only **3/8**. The cross term rides on a step dominated by the wave's own
+  stigmergy.
+
+So, even lossless, **a beach with one sand law doesn't learn from a teacher**. It needs
+a contrastive mechanism: something that writes the difference between teacher-plus and
+teacher-minus exposures (a two-sign material, a slow/fast pair of sand fractions), as
+coupled learning and equilibrium propagation require. Sol's point, measured.
+
 ## G3: can the beach learn to route?
 
 Two swells from the west: ω₁ should reach harbourN and ω₂ harbourS. Five beds, 300
@@ -156,6 +190,14 @@ looks like.
 - Reading order back with pings (P1a); quadratic order growth (P1d).
 - Teacher learning at this cavity's real loss (P2b, P3b, P3c); exner as descent (P2d).
 - My natural-sand control (P3d): it is aligned with the task.
+
+**Bugs found on the way**
+- G1's `history()` never applied `ampB`, so swell B ran at amplitude 1, not the
+  registered 1.18. Its peak stress was 0.72× A's instead of equal. AB and BA still got
+  identical exposure to each other, so the order comparison stays fair, but the
+  registered "B matched to A" did not hold. G4 uses the matched amplitude.
+- G1 crashed writing JSON (numpy bool) after every cell had run. `g1.json` was rebuilt
+  from the log, and the lost probe-stress check was recomputed (0.27 σ_c).
 
 **Not done**
 - Sol's step 4: WallMemoryLaw's tour law on continuous sand.

@@ -54,7 +54,7 @@ def pings(sand):
         out[:, :, t] = (HARB @ u).T
         if t % 25 == 0:
             gr = b.Gr @ u
-            smax = max(smax, float(((b.Fc @ (gr ** 2)) / b.deg).max()))
+            smax = max(smax, float(((b.Fc @ (gr ** 2)) / b.deg[:, None]).max()))
     return out, smax / G.SIGC
 
 
