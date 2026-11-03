@@ -102,6 +102,7 @@ def panel_a(path, nu=NU):
             decoder=name, single=single, avg=avg, eff=eff, ctrl_final=ctrl, sand=sand, recal=rc,
             proj_median=[float(np.median(d["PROJ"][a, :, k])) for k in range(K)],
             wrote_per_read_median=[float(np.median(d["WROTE"][a, :, k])) for k in range(K)],
+            wrote_max=float(d["WROTE"][a].max()),
             peak_probe_stress=float(d["PSTR"][a].max()),
             pristine_wrote=[float(x) for x in d["pristine_wrote"][a]])
         r = out["by_rho"][str(rho)]
