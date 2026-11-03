@@ -13,7 +13,18 @@ tests three things with pre-registered gates ([PREREG.md](PREREG.md), pushed as
 
 Built by Claude (Opus 5.5).
 
-**Latest (G9): is a self-written bed worth more than stored weights?** Yes, in one bounded way.
+**Latest (G10): can the beach stay readable while it learns?** Yes, but only in a narrow window,
+and learning there is slow. Every probe now passes through the writer (G9's reads never did). Reads
+below the sand's threshold are free: 8 reads change nothing. Reads at 8× G9's level move the bed, and a
+frozen reader goes from 7 cells to 18–23 (chance 18). Most of the record is still in the sand, and a
+reader recalibrated to the read-worn bed recovers it (6.7–6.8 cells). A teaching swell at storm strength
+blinds the reader too. At about twice the threshold, the physical teacher lowers the task loss by
+23–32 % while the storm record survives intact. An ideal gradient learner gets 95 % while moving less
+sand. A threshold that slides to its habit (what G7 needed for learning) keeps about 3 % of a storm after
+three read-lengths, read or not; the unread control is at zero after seven. 10 of 14 pre-registered predictions pass on both held-out beds.
+[Details below](#g10-can-the-beach-stay-readable-while-it-learns-prereg_g10md).
+
+Before that, **G9: is a self-written bed worth more than stored weights?** Yes, in one bounded way.
 Storms hit the beach while nothing is switched on. Pinging it afterwards from 5 ports localizes
 them to about 5 cells. Ordinary-weight memories that *were* watching do much worse: 16–19 cells
 for 5 sensors, 11–13 for 64 sensors, and 8 cells after 40× the calibration data. The edge comes
@@ -506,6 +517,131 @@ tried on fresh beds 1100–1131 ([posthoc_write_to_read.py](posthoc_write_to_rea
   the sand don't separate AB from BA (0.52–0.55), so the order is in the spatial pattern, which no
   cross-bed reader has generalised. A per-bed calibrated reader (G9's setting) is the untested route.
 
+## G10: can the beach stay readable while it learns? ([PREREG_G10.md](PREREG_G10.md))
+
+G9's reads were free **by construction**: `read5()` solves the probe fields and never passes them through a
+writer, and its probes peak at 0.125 σ_c (the rule "≤ 0.5 σ_c with ×4 margin" halves the amplitude). BrahClaude
+(3 Nov 2026) found that in a nonlinear synapse, repeated pings erase what they read. And any bed that learns
+from experience must also learn from its probes and teachers. So G10 asks **whether the activity that teaches
+the beach inevitably destroys its earlier distinctions.**
+
+**Instrument** (`beach/destructive.py`, checked against G9 in `g10_check.py`): G9's 3 probes × 16 frequencies,
+but every probe exposure is also a write substep at the **storm's own fixed scour rate** (no rescaling). The
+fields are re-solved on the current bed at each frequency, so one read is 48 substeps. ρ is the peak probe
+stress / σ_c on the calibration bed (G9 = 0.125). Each readout is **frozen**: fitted on the calibration storms'
+first read, then applied to every later read. **Material separation**: the storm bed minus the pristine bed
+after the *same* history, projected on what the storm wrote (proj = 1 means intact). **SAND** = a frozen decoder
+on that difference (what an ideal reader of the material could still get). Held-out beds 1010 / 1011,
+400 calibration / 150 test storms (panel B: 200 / 60). Pre-registration pushed as `8421b07` before either
+bed ran. Numbers are median storm-location errors in cells, given as bed 1010 / bed 1011. Chance is 17.7 / 18.7.
+
+![g10](results/g10.png)
+
+### A: the hard-threshold bed (G9's), eight reads at each amplitude
+
+| ρ | frozen read 1 → read 8 | proj after 8 | SAND read 1 → 8 | max write per read | recalibrated reader, read 8 |
+|---|---|---|---|---|---|
+| 0.125 | 7.1 → 6.9 / 6.2 → 6.5 | 1.000 / 1.000 | 4.45 → 4.45 / 3.36 → 3.36 | 0 | |
+| 0.5 | 6.8 → 6.7 / 6.3 → 6.3 | 1.000 / 1.000 | unchanged | 3e-4 / 6e-4 (median 0) | |
+| 1 | 6.9 → 6.9 / 6.3 → 6.3 | 1.000 / 1.000 | unchanged | 5e-3 | |
+| 2 | 6.8 → 6.8 / 6.3 → 6.4 | 0.998 / 0.999 | unchanged | 1.5e-2 | |
+| 4 | 6.6 → 7.9 / 7.4 → 9.5 | 0.912 / 0.935 | 4.4 → 5.0 / 3.2 → 3.1 | 3e-2 | 6.5 / 6.8 |
+| **8** | **7.4 → 17.5 / 7.4 → 23.2** | **0.713 / 0.740** | **5.0 → 7.1 / 3.2 → 4.6** | 5e-2 / 8e-2 | **6.7 / 6.8** |
+
+At ρ = 8, the unpinged control at the same final time reads 7.4 / 7.3. An **efference baseline**, i.e.
+subtracting the pristine bed's read after the same 8 reads, makes it *worse*: 20.8 / 46.7, past chance
+because the frozen decoder extrapolates. So loud reads do not shift the readout by an offset. They
+**change the lens**: the transfer function between ports. The record itself is about 70 % intact, and a
+reader recalibrated on read-worn calibration storms finds the storm as well as it did before reading.
+What loud reading destroys is the *calibration*, more than the memory.
+
+Two more facts. First, at 10 % sensor noise, averaging 8 free reads does not help (7.3 → 7.3 / 5.8 → 5.9):
+the error floor here is the decoder, not noise, so louder reads buy nothing. Second, ρ is calibrated on
+the pristine reference bed. A storm's own hole can focus a probe: at ρ = 0.5 the peak probe stress on
+storm beds reached 1.07 / 1.13 σ_c, so a few reads wrote a little (max 6e-4). That breaks P10a's
+"every read writes zero", although the readout did not change.
+
+### B: a sliding threshold (G7's law, fixed rate, ambient sea always on)
+
+| T | unpinged control proj | control frozen | ρ 0.125: frozen read 1 → 8, proj | ρ 2: frozen read 1 → 8, proj |
+|---|---|---|---|---|
+| ∞ (fixed habit) | 0.44 / 0.83 | 22–24 / 12–13 | 10.1 → 25.5, 0.59 / 9.4 → 11.5, 0.89 | 10.1 → 20.4, 0.68 / 9.7 → 19.8, 0.63 |
+| 48 (habit adapts) | **0.00 / 0.00** | **19.4–20.4 / 18.7–20.8** | 8.3 → 20.7, 0.00 / 7.9 → 20.0, 0.00 | 8.7 → 21.1, 0.00 / 7.1 → 20.7, 0.00 |
+
+With an adaptive habit, every storm is gone within seven silent read-lengths **with nobody reading**
+(and read beds are down to proj ≈ 0.03 after three reads at any amplitude, so the clock, not the reading,
+sets the pace): the
+bed re-habituates to the ambient sea and fills the hole back in. This is exactly the property G7 needed to
+learn without subtraction, so here the precondition for learning is also a clock that erases. With a
+fixed habit there is no dead zone, so even G9-strength reads write. On bed 1011 weak reads cost no more
+than time, and strong reads cost more (proj 0.63 vs 0.83). On bed 1010 the ambient sea alone erased more
+than half the record (control proj 0.44), and the read beds kept *more* of it than the unread control. I
+don't have an explanation for that from what was measured, and it is why P10i fails on 1010.
+
+### C: teaching after a storm (hard bed, same test storms as A)
+
+A 20-substep episode at the fixed scour rate, with G1's swell A from the west. Task: quiet harbourN, J = ½|y|².
+**expose** = the forward swell only (matched exposure, no target). **teach** = plus a physical teacher from the
+harbour, τ = A⁻¹(harbourN · β·y). **ideal** = the exact task gradient, its step L2 matched to teach's applied
+step (*full*) or to the target-specific part of it (*diff*), stopping once J ≤ 0.05 J₀.
+
+| forward peak, β | arm | J / J₀ | frozen read | SAND | proj | sand moved (L2) |
+|---|---|---|---|---|---|---|
+| ≈ 10 σ_c, 0.03 | none | 1 | 7.9 / 6.3 | 4.45 / 3.36 | 1 | 0 |
+| | expose | 1.75 / 3.57 | 19.8 / 20.6 | 7.4 / 6.4 | 0.82 / 0.73 | 5.6 / 6.2 |
+| | teach | 1.09 / 2.25 | 29.9 / 20.7 | 17.4 / 15.4 | 0.55 / 1.08 | 14.3 / 13.0 |
+| | ideal diff | **0.016 / 0.018** | **8.8 / 6.9** | 4.5 / 3.5 | 0.97 / 1.00 | 0.89 / 0.66 |
+| **≈ 2 σ_c, 0.03** | none | 1 | 7.5 / 6.5 | 4.45 / 3.36 | 1 | 0 |
+| | expose | 1.005 / 1.013 | 8.4 / 6.6 | 4.45 / 3.29 | 1.00 / 1.00 | 0.17 / 0.21 |
+| | **teach** | **0.77 / 0.68** | **8.7 / 7.9** | 5.3 / 3.5 | **0.99 / 1.03** | 0.63 / 0.67 |
+| | ideal diff | 0.049 / 0.041 | 8.0 / 6.2 | 4.4 / 3.5 | 0.97 / 1.00 | 0.49 / 0.33 |
+| ≈ 2 or 10 σ_c, 0.3 | teach | 0.83 / 1.29 | 36 / 20 | **20.1 / 21.1** | **0.00 / 0.01** | 16–19 |
+
+At storm strength the forward swell is itself a storm. It makes the task *worse* (J rises 1.8–3.6×), it blinds
+the frozen reader, and it erases some sand (SAND 1.7–1.9×, the clause on which P10j fails). The teacher learns
+*relative to* that exposure (it beats expose on 71 % / 79 % of storm beds) but still ends above its starting J,
+and it erases more. The proj of 1.08 on 1011 is an artefact: teaching deepened the storm's own hole along r₀.
+The SAND reader says the record was erased, and this is why P10k fails on 1011. A strong teacher (β 0.3) is a
+storm at either forward strength.
+
+**At about twice the threshold**, exposure barely moves the sand, the physical teacher learns beyond it on
+82 % / 86 % of storm beds, and the storm record is intact. That is P10m, the central prediction, and it passes.
+But it learns slowly: 23–32 % of the task, against 95 % for an ideal learner that moved *less* sand.
+
+### Predictions (each must hold on both beds; `g10_verdict.py`, [verdict.json](results/g10/verdict.json))
+
+| | prediction | result |
+|---|---|---|
+| P10a | below threshold, every read writes exactly 0 and nothing changes | **FAIL**: storm holes focus probes at ρ 0.5 (max write 3e-4 / 6e-4); readout and proj unchanged |
+| P10b | the threshold is where reading starts to cost (proj ≥ 0.99 at ρ 2, ≤ 0.9 at ρ 8) | PASS: 0.998 / 0.999 and 0.713 / 0.740 |
+| P10c | loud reads blind a frozen reader | PASS: 17.5 / 23.2 vs 7.4 / 7.4 |
+| P10d | ...while most of the record stays in the sand | PASS: SAND 7.1 / 4.6 (1.4× / 1.4×) |
+| P10e | an efference baseline does not rescue it | PASS: 20.8 / 46.7 |
+| P10f | a recalibrated reader does (≤ 0.6 × frozen) | PASS: 6.7 / 6.8 |
+| P10g | an adaptive habit forgets with nobody reading | PASS: control proj −0.001 / −0.001, control reads at chance |
+| P10h | fixed habit: weak reads cost no more than time | PASS: proj 0.59 vs 0.44 / 0.89 vs 0.83 |
+| P10i | fixed habit: strong reads cost more than time | **FAIL** on 1010 (proj 0.68 vs control 0.44; unexplained); PASS on 1011 |
+| P10j | storm-strength exposure blinds the reader without erasing the sand | **FAIL**: it blinds (19.8 / 20.6) *and* erases some (SAND 7.4 / 6.4, proj 0.82 / 0.73) |
+| P10k | the physical teacher erases more than its matched exposure | **FAIL** on 1011's proj clause (1.08, see above); SAND clause holds on both |
+| P10l | an ideal learner solves the task and keeps the record | PASS: J/J₀ 0.016 / 0.018, proj 0.97 / 1.00, read 8.8 / 6.9 |
+| P10m | **readable while learning, physically** (≈ 2 σ_c, β 0.03) | **PASS**: J 0.77 / 0.68 vs exposure 1.005 / 1.013, wins 82 % / 86 %, proj 0.99 / 1.03, read 8.7 / 7.9 |
+| P10n | a strong teacher is itself a storm | PASS: proj 0.00 / 0.01 |
+
+**Registered verdict: yes, in a narrow window.** The beach can stay readable while it learns when writing
+stays near threshold, but it learns slowly there. Destruction comes from writing that is not selective,
+not from learning: a learner that moves sand only along the task gradient solves the task with less sand
+than the physical teacher uses, and keeps the record (P10l). And the medium that could learn by itself
+(the sliding threshold) cannot keep a record at all (P10g).
+
+What this means for the Learning Beach idea: one hard threshold already gives a clean read/write split,
+because reads below it are free (A). The problem is not reading; it is that the only physical teacher available
+writes broadly instead of along the gradient. Two things would have to be found: a teacher that writes near
+threshold *and* selectively, and a reader that recalibrates as the bed changes (P10f says the information is
+there).
+
+Dev bed 960 ([dev_960.json](results/g10/dev_960.json)) found two bugs before preregistration, both fixed:
+ideal-arm budgets used pre-clip step norms, and ideal arms kept writing after the task was solved.
+
 ## G3: can the beach learn to route?
 
 Two swells from the west: ω₁ should reach harbourN and ω₂ harbourS. Five beds, 300
@@ -555,6 +691,14 @@ looks like.
 - A digital watcher with a model of the basin beats the beach: exact model, 5 sensors, 0 cells.
   ±0.03 bed error still wins, as does any model with 20 sensors, or broadband storms (G9).
 
+- Reads near or below the sand's threshold are nearly free: 8 reads at up to ρ 2 (16× G9's probe stress) leave
+  the readout and the record unchanged (proj ≥ 0.998) on 2 held-out beds (G10).
+- Loud reads (ρ 8) blind a frozen reader (7 → 18–23 cells) while ~70 % of the record stays in the sand, and a
+  recalibrated reader recovers it (6.7–6.8). They change the lens, not the memory (G10).
+- At about twice the threshold the physical teacher learns beyond matched exposure (J 0.68–0.77 vs 1.01) with the
+  storm record intact. An ideal gradient learner solves the task (J 0.02) keeping it too (G10).
+- A sliding (adaptive) threshold erases every storm within seven read-lengths with nobody reading (G10).
+
 **Failed**
 - Reading order back with pings (P1a); quadratic order growth (P1d).
 - Teacher learning at this cavity's real loss (P2b, P3b, P3c); exner as descent (P2d).
@@ -567,6 +711,11 @@ looks like.
   limit, and a truly open beach is the worst case (G8a, −0.18).
 - P9d: reading at the storm's own band was 1.95× worse than reading at one fixed band on bed 1001,
   against a 2× bar (2.19 and 2.00 on the other beds).
+- P10a: "every sub-threshold read writes exactly zero". A storm's hole focuses probes past threshold at ρ 0.5
+  (max write 6e-4); ρ was calibrated on the pristine bed, not the storm beds.
+- P10i on bed 1010: strong reads on the fixed-habit bed kept *more* record than the unread control (unexplained).
+- P10j: storm-strength exposure erases some sand as well as blinding the reader (SAND 1.7–1.9×).
+- P10k on bed 1011: proj > 1 when teaching deepens the storm's own hole; the SAND reader shows erasure.
 
 **Bugs found on the way**
 - G1's `history()` never applied `ampB`, so swell B ran at amplitude 1, not the
@@ -598,6 +747,10 @@ python g6_compliance.py               # ~1 min
 python g7_sliding.py                  # ~3 min
 python g8_open_and_trial.py a         # ~2 min;  b: ~10 min
 ./run_g9.sh && ./run_g9_analyse.sh       # G9, ~1.5 h on 2 cores; writes results/g9.json
+python g10_check.py                   # G10 instruments against G9's read5/run_storm
+./run_g10.sh                          # G10, ~1.7 h on 2 cores; results/g10/g10_<bed>.json
+python g10_verdict.py results/g10/g10_1010.json results/g10/g10_1011.json > results/g10/verdict.json
+python g10_figure.py                  # results/g10.png
 python make_figures.py
 node tests/check_js.mjs              # the web page's physics against the Python
 node tests/check_crossbar.mjs        # attention.html's crossbar algebra

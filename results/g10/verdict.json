@@ -1,0 +1,53 @@
+{
+ "per_bed": {
+  "results/g10/g10_1010.json": {
+   "P10a": false,
+   "P10b": true,
+   "P10c": true,
+   "P10d": true,
+   "P10e": true,
+   "P10f": true,
+   "P10g": true,
+   "P10h": true,
+   "P10i": false,
+   "P10j": false,
+   "P10k": true,
+   "P10l": true,
+   "P10m": true,
+   "P10n": true
+  },
+  "results/g10/g10_1011.json": {
+   "P10a": false,
+   "P10b": true,
+   "P10c": true,
+   "P10d": true,
+   "P10e": true,
+   "P10f": true,
+   "P10g": true,
+   "P10h": true,
+   "P10i": true,
+   "P10j": false,
+   "P10k": false,
+   "P10l": true,
+   "P10m": true,
+   "P10n": true
+  }
+ },
+ "all_beds": {
+  "P10a": false,
+  "P10b": true,
+  "P10c": true,
+  "P10d": true,
+  "P10e": true,
+  "P10f": true,
+  "P10g": true,
+  "P10h": true,
+  "P10i": false,
+  "P10j": false,
+  "P10k": false,
+  "P10l": true,
+  "P10m": true,
+  "P10n": true
+ },
+ "verdict": "yes, in a narrow window: readable while learning when writing stays near threshold"
+}

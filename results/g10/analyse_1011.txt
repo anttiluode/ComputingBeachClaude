@@ -1,0 +1,38 @@
+a rho 0.125: single  6.21 ->  6.46 | avg8  6.21 | eff8  6.46 | ctrl  6.39 | proj8 1.000 | recal1 10.60 recal8 10.78 recalK   nan | sand1  3.36 sandK  3.36 | wrote 0.0e+00 [knn]
+a rho   0.5: single  6.31 ->  6.31 | avg8  6.31 | eff8  6.31 | ctrl  6.36 | proj8 1.000 | recal1 10.47 recal8 10.47 recalK   nan | sand1  3.36 sandK  3.36 | wrote 0.0e+00 [knn]
+a rho   1.0: single  6.30 ->  6.30 | avg8  6.30 | eff8  6.30 | ctrl  6.30 | proj8 1.000 | recal1 10.63 recal8 10.40 recalK   nan | sand1  3.36 sandK  3.36 | wrote 6.3e-04 [knn]
+a rho   2.0: single  6.31 ->  6.39 | avg8  6.38 | eff8  6.38 | ctrl  6.36 | proj8 0.999 | recal1 10.63 recal8 10.65 recalK   nan | sand1  3.36 sandK  3.36 | wrote 5.6e-03 [knn]
+a rho   4.0: single  7.39 ->  9.48 | avg8  8.34 | eff8 23.75 | ctrl  7.52 | proj8 0.935 | recal1 10.85 recal8  9.41 recalK  6.79 | sand1  3.24 sandK  3.08 | wrote 1.5e-02 [krr]
+a rho   8.0: single  7.36 -> 23.16 | avg8 17.90 | eff8 46.68 | ctrl  7.33 | proj8 0.740 | recal1 10.10 recal8  9.59 recalK  6.83 | sand1  3.19 sandK  4.58 | wrote 3.5e-02 [krr]
+a rho 0.125: single  5.76 ->  6.23 | avg8  5.86 | eff8  6.23 | ctrl  6.30 | proj8 1.000 | recal1  9.48 recal8  8.95 recalK   nan | sand1  3.36 sandK  3.36 | wrote 0.0e+00 [knn]
+a rho   0.5: single  6.99 ->  7.12 | avg8  6.87 | eff8  7.12 | ctrl  7.15 | proj8 1.000 | recal1 10.46 recal8 10.59 recalK   nan | sand1  3.36 sandK  3.36 | wrote 0.0e+00 [knn]
+a rho   1.0: single  6.52 ->  6.54 | avg8  6.77 | eff8  6.55 | ctrl  6.58 | proj8 1.000 | recal1 10.50 recal8  9.92 recalK   nan | sand1  3.36 sandK  3.36 | wrote 6.3e-04 [knn]
+a rho   2.0: single  6.41 ->  6.51 | avg8  6.52 | eff8  6.57 | ctrl  6.21 | proj8 0.999 | recal1 10.60 recal8 10.80 recalK   nan | sand1  3.36 sandK  3.36 | wrote 5.6e-03 [knn]
+a rho   4.0: single  5.67 ->  7.81 | avg8  7.04 | eff8  8.69 | ctrl  5.35 | proj8 0.935 | recal1 10.18 recal8  8.71 recalK  6.77 | sand1  3.24 sandK  3.08 | wrote 1.5e-02 [knn]
+a rho   8.0: single  7.02 -> 22.70 | avg8 17.46 | eff8 46.38 | ctrl  7.07 | proj8 0.740 | recal1  9.87 recal8  9.38 recalK  6.66 | sand1  3.19 sandK  4.58 | wrote 3.5e-02 [krr]
+b T   inf rho 0.125: single  9.36 -> 11.45 | avg8  9.69 | eff8 11.64 | ctrl 12.53 (eff 12.53) | proj8 0.888 (ctrl 0.833) | recal1 16.02 recal8 13.28 (ctrl 13.61) | sandK  8.03 (ctrl  7.19) [knn]
+b T   inf rho   0.5: single  9.96 -> 12.84 | avg8  9.64 | eff8 14.52 | ctrl 12.00 (eff 12.00) | proj8 0.867 (ctrl 0.833) | recal1 15.40 recal8 15.13 (ctrl 13.64) | sandK  7.54 (ctrl  7.19) [knn]
+b T   inf rho   2.0: single  9.69 -> 19.79 | avg8 17.18 | eff8 18.06 | ctrl 12.66 (eff 12.66) | proj8 0.631 (ctrl 0.833) | recal1 15.30 recal8 14.89 (ctrl 13.97) | sandK  9.66 (ctrl  7.19) [knn]
+b T  48.0 rho 0.125: single  7.86 -> 19.97 | avg8 19.37 | eff8 21.10 | ctrl 20.47 (eff 20.78) | proj8 -0.000 (ctrl -0.001) | recal1 12.33 recal8 19.62 (ctrl 21.71) | sandK 22.58 (ctrl 22.58) [krr]
+b T  48.0 rho   0.5: single  8.02 -> 19.04 | avg8 22.18 | eff8 21.49 | ctrl 20.78 (eff 20.74) | proj8 0.000 (ctrl -0.001) | recal1 12.14 recal8 21.02 (ctrl 19.18) | sandK 22.58 (ctrl 22.58) [krr]
+b T  48.0 rho   2.0: single  7.14 -> 20.72 | avg8 21.81 | eff8 19.81 | ctrl 18.68 (eff 18.67) | proj8 0.000 (ctrl -0.001) | recal1 12.09 recal8 19.42 (ctrl 19.60) | sandK 22.58 (ctrl 22.58) [krr]
+c amp 1.0 beta 0.03: none       read  6.31 (eff  6.31, recal 10.65) | sand  3.36 | proj 1.000 | J/J0 1.000 (pristine 1.000) | L2 0.000
+c amp 1.0 beta 0.03: expose     read 20.64 (eff 20.23, recal 11.82) | sand  6.39 | proj 0.725 | J/J0 3.573 (pristine 24.219) | L2 6.247
+c amp 1.0 beta 0.03: teach      read 20.70 (eff 19.26, recal 14.26) | sand 15.42 | proj 1.078 | J/J0 2.249 (pristine 10.704) | L2 12.973
+c amp 1.0 beta 0.03: ideal_full read  7.23 (eff  7.30, recal 10.08) | sand  3.92 | proj 1.000 | J/J0 0.019 (pristine 0.005) | L2 1.865
+c amp 1.0 beta 0.03: ideal_diff read  6.91 (eff  7.21, recal 10.12) | sand  3.47 | proj 1.003 | J/J0 0.018 (pristine 0.043) | L2 0.663
+c amp 1.0 beta 0.3: none       read  6.46 (eff  6.46, recal 10.65) | sand  3.36 | proj 1.000 | J/J0 1.000 (pristine 1.000) | L2 0.000
+c amp 1.0 beta 0.3: expose     read 21.24 (eff 19.77, recal 11.82) | sand  6.39 | proj 0.725 | J/J0 3.573 (pristine 24.219) | L2 6.247
+c amp 1.0 beta 0.3: teach      read 19.78 (eff 19.86, recal 20.43) | sand 20.51 | proj 0.000 | J/J0 1.292 (pristine 21.844) | L2 17.351
+c amp 1.0 beta 0.3: ideal_full read 19.53 (eff 19.23, recal 16.90) | sand 14.46 | proj 0.311 | J/J0 0.034 (pristine 0.006) | L2 12.370
+c amp 1.0 beta 0.3: ideal_diff read 19.76 (eff 18.63, recal 15.46) | sand 14.63 | proj 0.148 | J/J0 0.033 (pristine 0.018) | L2 12.216
+c amp 0.45 beta 0.03: none       read  6.46 (eff  6.46, recal 10.60) | sand  3.36 | proj 1.000 | J/J0 1.000 (pristine 1.000) | L2 0.000
+c amp 0.45 beta 0.03: expose     read  6.57 (eff  6.73, recal 10.92) | sand  3.29 | proj 1.004 | J/J0 1.013 (pristine 1.060) | L2 0.209
+c amp 0.45 beta 0.03: teach      read  7.86 (eff  7.86, recal 11.89) | sand  3.54 | proj 1.033 | J/J0 0.682 (pristine 1.050) | L2 0.673
+c amp 0.45 beta 0.03: ideal_full read  6.27 (eff  6.21, recal 10.32) | sand  3.47 | proj 0.998 | J/J0 0.039 (pristine 0.527) | L2 0.330
+c amp 0.45 beta 0.03: ideal_diff read  6.21 (eff  6.21, recal 10.43) | sand  3.47 | proj 0.996 | J/J0 0.041 (pristine 0.722) | L2 0.334
+c amp 0.45 beta 0.3: none       read  6.39 (eff  6.39, recal 10.40) | sand  3.36 | proj 1.000 | J/J0 1.000 (pristine 1.000) | L2 0.000
+c amp 0.45 beta 0.3: expose     read  6.99 (eff  7.00, recal 10.59) | sand  3.29 | proj 1.004 | J/J0 1.013 (pristine 1.060) | L2 0.209
+c amp 0.45 beta 0.3: teach      read 19.93 (eff 19.86, recal 18.14) | sand 21.05 | proj 0.008 | J/J0 1.288 (pristine 21.680) | L2 18.860
+c amp 0.45 beta 0.3: ideal_full read 17.82 (eff 20.01, recal 17.96) | sand 13.02 | proj 1.411 | J/J0 0.019 (pristine 0.022) | L2 14.108
+c amp 0.45 beta 0.3: ideal_diff read 17.38 (eff 20.04, recal 18.37) | sand 13.02 | proj 1.408 | J/J0 0.019 (pristine 0.016) | L2 14.106
