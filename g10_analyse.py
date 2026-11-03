@@ -107,7 +107,7 @@ def panel_a(path, nu=NU):
         r = out["by_rho"][str(rho)]
         print(f"a rho {rho:5}: single {r['single'][0]:5.2f} -> {r['single'][-1]:5.2f} | avg8 {r['avg'][-1]:5.2f} | "
               f"eff8 {r['eff'][-1]:5.2f} | ctrl {ctrl:5.2f} | proj8 {r['proj_median'][-1]:.3f} | "
-              f"recal1 {rc[1]:5.2f} recal8 {rc[K]:5.2f} recalK {rc.get('recalK_cal', float('nan')):5.2f} | sand1 {sand[1]:5.2f} sand8 {sand[K]:5.2f} | wrote {r['wrote_per_read_median'][0]:.1e} [{name}]", flush=True)
+              f"recal1 {rc[1]:5.2f} recal8 {rc[K]:5.2f} recalK {rc.get('recalK_cal', float('nan')):5.2f} | sand1 {sand[1]:5.2f} sandK {sand.get(K, float('nan')):5.2f} | wrote {r['wrote_per_read_median'][0]:.1e} [{name}]", flush=True)
     return out
 
 
@@ -144,7 +144,7 @@ def panel_b(path):
             r = res["by_rho"][str(rho)]
             print(f"b T {T:5} rho {rho:5}: single {single[0]:5.2f} -> {single[-1]:5.2f} | avg8 {avg[-1]:5.2f} | "
                   f"eff8 {eff[-1]:5.2f} | ctrl {ctrl:5.2f} (eff {ctrl_eff:5.2f}) | proj8 {r['proj_median'][-1]:.3f} "
-                  f"(ctrl {res['ctrl_proj_median']:.3f}) | recal1 {rc[1]:5.2f} recal8 {rc[K]:5.2f} (ctrl {rc['ctrl']:5.2f}) | sand8 {sand[K]:5.2f} (ctrl {sand_ctrl:5.2f}) [{name}]", flush=True)
+                  f"(ctrl {res['ctrl_proj_median']:.3f}) | recal1 {rc[1]:5.2f} recal8 {rc[K]:5.2f} (ctrl {rc['ctrl']:5.2f}) | sandK {sand.get(K, float('nan')):5.2f} (ctrl {sand_ctrl:5.2f}) [{name}]", flush=True)
         out["by_T"][str(T)] = res
     return out
 
