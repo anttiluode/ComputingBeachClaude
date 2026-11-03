@@ -5,3 +5,5 @@ results/*.log
 results/g9/*.npz
 results/g9/*.log
 results/posthoc_write_to_read.npz
+results/g10/*.npz
+results/g10/*.log
