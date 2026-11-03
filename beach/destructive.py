@@ -152,14 +152,20 @@ def task_J(sand):
     return float(0.5 * abs(RD @ _lu(sand, W_TEACH).solve(SRC_F.astype(complex))) ** 2)
 
 
+SOLVED = 0.05     # ideal arms stop writing once J <= SOLVED * J0 (no wandering after the task is done)
+
+
 def episode(bed0, arm, E, beta, rate=RATE, ref=None, amp=1.0):
     """One teaching episode on the hard medium.  arms:
        expose      forward swell only, scour writer                 (matched exposure, no target)
        teach       forward swell + physical teacher from harbourN,  tau = A^-1 (rd * beta * y),
                    scour writer, one exposure, no subtraction  (G5's 'natural' with a threshold)
        ideal_full  exact task gradient, step L2 = teach's applied step L2 (ref['full'][t])
-       ideal_diff  exact task gradient, step L2 = |d_teach - d_expose| on teach's own state
-                   (ref['diff'][t]): the size of the target-specific part of teach's write
+       ideal_diff  exact task gradient, step L2 = |applied(d_teach) - applied(d_expose)| on
+                   teach's own state (ref['diff'][t]): the size of the target-specific part of
+                   teach's write
+    Ideal arms stop writing once J <= SOLVED * J0.  All step sizes are APPLIED (after the
+    sand bounds clip), so budgets are matched on what actually moved.
     Returns bed, J trajectory, per-step applied L2 and (teach) the diff norms."""
     bed = bed0.copy()
     src = SRC_F * amp
@@ -174,10 +180,14 @@ def episode(bed0, arm, E, beta, rate=RATE, ref=None, amp=1.0):
                 y = RD @ eta
                 tau = lu.solve((RD * (beta * y)).astype(complex))
                 d = scour(b, b.stress(eta, tau), SIGC, rate)
-                diff.append(float(np.linalg.norm(d - de)))
+                diff.append(float(np.linalg.norm(apply(bed.s, d) - apply(bed.s, de))))
             else:
                 d = de
         else:
+            if J[-1] <= SOLVED * J[0]:
+                full.append(0.0)
+                J.append(J[-1])
+                continue
             g, _, _ = b.grad_sand(bed.s, W_TEACH, src, RD, lambda y: y)
             size = ref["full" if arm == "ideal_full" else "diff"][t]
             ng = np.linalg.norm(g)

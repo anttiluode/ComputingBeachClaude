@@ -161,9 +161,9 @@ def panel_c(path, path_a):
     base = da["PF"][a0, 0]
     name, est = decoder(cplx(nz(da["CF"][a0], rho) - base), Yc)
     sest = sand_decoder(da)
-    arms, betas = [str(x) for x in d["arms"]], list(d["betas"])
-    out = dict(seed=int(d["seed"]), n_test=len(Yt), chance=chance(Yc, Yt), decoder=name, by_beta={})
-    for bi, beta in enumerate(betas):
+    arms, conds = [str(x) for x in d["arms"]], [tuple(c) for c in d["conds"]]
+    out = dict(seed=int(d["seed"]), n_test=len(Yt), chance=chance(Yc, Yt), decoder=name, by_cond={})
+    for bi, (amp, beta) in enumerate(conds):
         res = {}
         J0 = d["J"][bi, 0, :, 0]
         for ai, arm in enumerate(arms):
@@ -179,13 +179,14 @@ def panel_c(path, path_a):
                 pristine_J_ratio=float(d["PJ"][bi, ai, -1] / d["PJ"][bi, ai, 0]),
                 write_L2_total_median=float(np.median(d["STEP"][bi, ai].sum(1))))
             r = res[arm]
-            print(f"c beta {beta}: {arm:10} read {r['read_frozen']:5.2f} (eff {r['read_eff']:5.2f}, recal {r['read_recal']:5.2f}) | sand {r['sand']:5.2f} | "
+            print(f"c amp {amp} beta {beta}: {arm:10} read {r['read_frozen']:5.2f} (eff {r['read_eff']:5.2f}, recal {r['read_recal']:5.2f}) | sand {r['sand']:5.2f} | "
                   f"proj {r['proj_median']:.3f} | J/J0 {r['J_ratio_median']:.3f} (pristine {r['pristine_J_ratio']:.3f}) | "
                   f"L2 {r['write_L2_total_median']:.3f}", flush=True)
         # learning beyond exposure, per storm bed
         Jt, Je = d["J"][bi, arms.index("teach"), :, -1], d["J"][bi, arms.index("expose"), :, -1]
         res["teach_beats_expose_frac"] = float(np.mean(Jt < Je))
-        out["by_beta"][str(beta)] = res
+        res["learning_beyond_exposure"] = float(np.median(Je / J0) - np.median(Jt / J0))
+        out["by_cond"][f"amp{amp}_beta{beta}"] = res
     return out
 
 

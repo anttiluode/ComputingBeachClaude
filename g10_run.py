@@ -27,6 +27,9 @@ RECAL_RHO = (4.0, 8.0)        # panel a: calibration storms also read K times (r
 ARMS_C = ["expose", "teach", "ideal_full", "ideal_diff"]
 E_C = 20
 BETAS_C = [0.03, 0.3]
+AMPS_C = [1.0, 0.45]          # forward swell amplitude: 1 = storm strength (peak ~10 sigma_c),
+                              # 0.45 -> stress x0.2, peak ~2 sigma_c (panel a's near-harmless level)
+CONDS_C = [(a, bt) for a in AMPS_C for bt in BETAS_C]
 
 
 def storms(seed, n_cal, n_test, tag):
@@ -181,24 +184,24 @@ def panel_c(seed, n_cal, n_test, out):
     _, test = storms(seed, n_cal, n_test, 1)              # identical to panel a's test storms
     t0 = time.time()
     arms = ["none"] + ARMS_C
-    na, nb = len(arms), len(BETAS_C)
-    R = dict(seed=seed, E=E_C, betas=np.array(BETAS_C), arms=np.array(arms))
+    na, nb = len(arms), len(CONDS_C)
+    R = dict(seed=seed, E=E_C, conds=np.array(CONDS_C), arms=np.array(arms))
     PF = np.zeros((nb, na, 16, len(D.PAIRS)), complex)
     PS = np.zeros((nb, na, W.b.n))
     PJ = np.zeros((nb, na, E_C + 1))
 
-    def run_arms(bed0, beta):
+    def run_arms(bed0, amp, beta):
         """returns {arm: (bed, J traj, applied step L2s)}"""
-        tb, Jt, full, diff = D.episode(bed0, "teach", E_C, beta)
+        tb, Jt, full, diff = D.episode(bed0, "teach", E_C, beta, amp=amp)
         ref = dict(full=full, diff=diff)
         res = {"none": (bed0.copy(), [D.task_J(bed0.s)] * (E_C + 1), [0.0] * E_C), "teach": (tb, Jt, full)}
         for arm in ("expose", "ideal_full", "ideal_diff"):
-            bed, J_, st_, _ = D.episode(bed0, arm, E_C, beta, ref=ref)
+            bed, J_, st_, _ = D.episode(bed0, arm, E_C, beta, ref=ref, amp=amp)
             res[arm] = (bed, J_, st_)
         return res
 
-    for bi, beta in enumerate(BETAS_C):
-        res = run_arms(B0, beta)
+    for bi, (amp, beta) in enumerate(CONDS_C):
+        res = run_arms(B0, amp, beta)
         for ai, arm in enumerate(arms):
             bed, J_, _ = res[arm]
             PS[bi, ai], PJ[bi, ai] = bed.s, J_
@@ -214,8 +217,8 @@ def panel_c(seed, n_cal, n_test, out):
         SB = D.storm(B0, st)
         r0 = (SB.s - sand0).astype(float)
         TR0[i] = r0
-        for bi, beta in enumerate(BETAS_C):
-            res = run_arms(SB, beta)
+        for bi, (amp, beta) in enumerate(CONDS_C):
+            res = run_arms(SB, amp, beta)
             for ai, arm in enumerate(arms):
                 bed, J_, st_ = res[arm]
                 J[bi, ai, i], STEP[bi, ai, i] = J_, st_
