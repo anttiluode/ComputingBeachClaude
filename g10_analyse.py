@@ -25,11 +25,22 @@ import sys
 import warnings
 import numpy as np
 
+from sklearn.base import clone
+from sklearn.model_selection import cross_val_predict, KFold
+
 from g9_analyse import fit, err
 from beach import watch as W
 
 warnings.filterwarnings("ignore")
-NU = 0.01
+NU = 0.01          # G9's sensor noise (primary)
+NU_HI = 0.10       # secondary: a noisy sensor, where louder reads should pay
+
+
+def recal(est, X, Y):
+    """Information still in the reads: the same decoder (family + hyperparameters chosen on
+    calibration) refitted by 5-fold CV on the test storms' read-k features."""
+    P = cross_val_predict(clone(est), X, Y, cv=KFold(5, shuffle=True, random_state=0))
+    return err(P, Y)
 
 
 def cplx(Z):
@@ -62,13 +73,13 @@ def sand_decoder(d, key="CR0"):
     return est
 
 
-def panel_a(path):
+def panel_a(path, nu=NU):
     d = dict(np.load(path))
     rhos, K = list(d["rhos"]), int(d["K"])
     Yc, Yt = d["cal_loc"].astype(float), d["test_loc"].astype(float)
-    floor = NU * np.sqrt(np.mean(np.abs(d["PF"][0, 0]) ** 2))
-    nz = Noise(floor, int(d["seed"]) * 31 + 1)
-    out = dict(seed=int(d["seed"]), n_cal=len(Yc), n_test=len(Yt), chance=chance(Yc, Yt), by_rho={})
+    floor = nu * np.sqrt(np.mean(np.abs(d["PF"][0, 0]) ** 2))
+    nz = Noise(floor, int(d["seed"]) * 31 + 1 + int(nu * 1000))
+    out = dict(seed=int(d["seed"]), nu=nu, n_cal=len(Yc), n_test=len(Yt), chance=chance(Yc, Yt), by_rho={})
     sest = sand_decoder(d)
     save_k = list(d["save_k"])
     for a, rho in enumerate(rhos):
@@ -81,8 +92,14 @@ def panel_a(path):
         eff = [err(est.predict(cplx(noisy[:, k] - d["PF"][a, k])), Yt) for k in range(K)]
         ctrl = err(est.predict(cplx(nz(TF[:, 0], rho) - base)), Yt)
         sand = {int(k): err(sest.predict(d["REC"][a, :, j].astype(float)), Yt) for j, k in enumerate(save_k)}
+        rc = {1: recal(est, cplx(noisy[:, 0] - base), Yt), K: recal(est, cplx(noisy[:, K - 1] - base), Yt)}
+        if "CFK" in d and rho in list(d["recal_rhos"]):
+            # recalibrated reader: decoder chosen and fitted on calibration storms' K-th read
+            j = list(d["recal_rhos"]).index(rho)
+            nK, eK = decoder(cplx(nz(d["CFK"][j], rho) - base), Yc)
+            rc["recalK_cal"] = err(eK.predict(cplx(noisy[:, K - 1] - base)), Yt)
         out["by_rho"][str(rho)] = dict(
-            decoder=name, single=single, avg=avg, eff=eff, ctrl_final=ctrl, sand=sand,
+            decoder=name, single=single, avg=avg, eff=eff, ctrl_final=ctrl, sand=sand, recal=rc,
             proj_median=[float(np.median(d["PROJ"][a, :, k])) for k in range(K)],
             wrote_per_read_median=[float(np.median(d["WROTE"][a, :, k])) for k in range(K)],
             peak_probe_stress=float(d["PSTR"][a].max()),
@@ -90,7 +107,7 @@ def panel_a(path):
         r = out["by_rho"][str(rho)]
         print(f"a rho {rho:5}: single {r['single'][0]:5.2f} -> {r['single'][-1]:5.2f} | avg8 {r['avg'][-1]:5.2f} | "
               f"eff8 {r['eff'][-1]:5.2f} | ctrl {ctrl:5.2f} | proj8 {r['proj_median'][-1]:.3f} | "
-              f"sand1 {sand[1]:5.2f} sand8 {sand[K]:5.2f} | wrote {r['wrote_per_read_median'][0]:.1e} [{name}]", flush=True)
+              f"recal1 {rc[1]:5.2f} recal8 {rc[K]:5.2f} recalK {rc.get('recalK_cal', float('nan')):5.2f} | sand1 {sand[1]:5.2f} sand8 {sand[K]:5.2f} | wrote {r['wrote_per_read_median'][0]:.1e} [{name}]", flush=True)
     return out
 
 
@@ -118,14 +135,16 @@ def panel_b(path):
             ctrl = err(est.predict(cplx(nz(d["CTF"][ti, a], rho) - base)), Yt)
             ctrl_eff = err(est.predict(cplx(nz(d["CTF"][ti, a], rho) - d["PCF"][ti, a])), Yt)
             sand = {int(k): err(sest.predict(d["REC"][ti, a, :, j].astype(float)), Yt) for j, k in enumerate(save_k)}
+            rc = {1: recal(est, cplx(noisy[:, 0] - base), Yt), K: recal(est, cplx(noisy[:, K - 1] - base), Yt),
+                  "ctrl": recal(est, cplx(nz(d["CTF"][ti, a], rho) - base), Yt)}
             res["by_rho"][str(rho)] = dict(
-                decoder=name, single=single, avg=avg, eff=eff, ctrl_final=ctrl, ctrl_final_eff=ctrl_eff, sand=sand,
+                decoder=name, single=single, avg=avg, eff=eff, ctrl_final=ctrl, ctrl_final_eff=ctrl_eff, sand=sand, recal=rc,
                 proj_median=[float(np.median(d["PROJ"][ti, a, :, k])) for k in range(K)],
                 wrote_per_read_median=[float(np.median(d["WROTE"][ti, a, :, k])) for k in range(K)])
             r = res["by_rho"][str(rho)]
             print(f"b T {T:5} rho {rho:5}: single {single[0]:5.2f} -> {single[-1]:5.2f} | avg8 {avg[-1]:5.2f} | "
                   f"eff8 {eff[-1]:5.2f} | ctrl {ctrl:5.2f} (eff {ctrl_eff:5.2f}) | proj8 {r['proj_median'][-1]:.3f} "
-                  f"(ctrl {res['ctrl_proj_median']:.3f}) | sand8 {sand[K]:5.2f} (ctrl {sand_ctrl:5.2f}) [{name}]", flush=True)
+                  f"(ctrl {res['ctrl_proj_median']:.3f}) | recal1 {rc[1]:5.2f} recal8 {rc[K]:5.2f} (ctrl {rc['ctrl']:5.2f}) | sand8 {sand[K]:5.2f} (ctrl {sand_ctrl:5.2f}) [{name}]", flush=True)
         out["by_T"][str(T)] = res
     return out
 
@@ -151,6 +170,7 @@ def panel_c(path, path_a):
             noisy = nz(d["TF"][bi, ai], rho)
             JE = d["J"][bi, ai, :, -1]
             res[arm] = dict(
+                read_recal=recal(est, cplx(noisy - base), Yt),
                 read_frozen=err(est.predict(cplx(noisy - base)), Yt),
                 read_eff=err(est.predict(cplx(noisy - d["PF"][bi, ai])), Yt),
                 sand=err(sest.predict(d["REC"][bi, ai].astype(float)), Yt),
@@ -159,7 +179,7 @@ def panel_c(path, path_a):
                 pristine_J_ratio=float(d["PJ"][bi, ai, -1] / d["PJ"][bi, ai, 0]),
                 write_L2_total_median=float(np.median(d["STEP"][bi, ai].sum(1))))
             r = res[arm]
-            print(f"c beta {beta}: {arm:10} read {r['read_frozen']:5.2f} (eff {r['read_eff']:5.2f}) | sand {r['sand']:5.2f} | "
+            print(f"c beta {beta}: {arm:10} read {r['read_frozen']:5.2f} (eff {r['read_eff']:5.2f}, recal {r['read_recal']:5.2f}) | sand {r['sand']:5.2f} | "
                   f"proj {r['proj_median']:.3f} | J/J0 {r['J_ratio_median']:.3f} (pristine {r['pristine_J_ratio']:.3f}) | "
                   f"L2 {r['write_L2_total_median']:.3f}", flush=True)
         # learning beyond exposure, per storm bed
@@ -171,5 +191,5 @@ def panel_c(path, path_a):
 
 if __name__ == "__main__":
     o, pa, pb, pc = sys.argv[1:5]
-    res = dict(a=panel_a(pa), b=panel_b(pb), c=panel_c(pc, pa))
+    res = dict(a=panel_a(pa), a_noisy=panel_a(pa, NU_HI), b=panel_b(pb), c=panel_c(pc, pa))
     json.dump(res, open(o, "w"), indent=1)

@@ -23,6 +23,7 @@ RHO_A = [0.125, 0.5, 1.0, 2.0, 4.0, 8.0]
 RHO_B = [0.125, 0.5, 2.0]
 T_B = [np.inf, 48.0]
 SAVE_K = (1, 2, 4, 8)
+RECAL_RHO = (4.0, 8.0)        # panel a: calibration storms also read K times (recalibrated reader)
 ARMS_C = ["expose", "teach", "ideal_full", "ideal_diff"]
 E_C = 20
 BETAS_C = [0.03, 0.3]
@@ -56,15 +57,22 @@ def panel_a(seed, n_cal, n_test, K, out):
     R.update(PF=PF, pristine_wrote=PW_)
     # calibration storms: one physical read at each amplitude
     CF = np.zeros((len(RHO_A), n_cal, 16, len(D.PAIRS)), complex)
+    CFK = np.zeros((len(RECAL_RHO), n_cal, 16, len(D.PAIRS)), complex)
     CR0 = np.zeros((n_cal, W.b.n), np.float32)
     for i, st in enumerate(cal):
         SB = D.storm(B0, st)
         CR0[i] = SB.s - sand0
         for a, rho in enumerate(RHO_A):
-            CF[a, i] = D.read_phys(SB.copy(), rho)[0]
+            bed = SB.copy()
+            CF[a, i] = D.read_phys(bed, rho)[0]
+            if rho in RECAL_RHO:
+                for _ in range(K - 1):
+                    f = D.read_phys(bed, rho)[0]
+                CFK[RECAL_RHO.index(rho), i] = f
         if i % 50 == 0:
             print("a cal", seed, i, f"{time.time() - t0:.0f}s", flush=True)
-    R.update(CF=CF, CR0=CR0, cal_loc=np.array([(s["r"], s["c"]) for s in cal]))
+    R.update(CF=CF, CFK=CFK, recal_rhos=np.array(RECAL_RHO), CR0=CR0,
+             cal_loc=np.array([(s["r"], s["c"]) for s in cal]))
     # test storms: K reads at each amplitude
     TF = np.zeros((len(RHO_A), n_test, K, 16, len(D.PAIRS)), complex)
     TR0 = np.zeros((n_test, W.b.n), np.float32)
