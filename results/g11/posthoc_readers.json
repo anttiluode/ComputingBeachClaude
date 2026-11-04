@@ -1,0 +1,21 @@
+{
+ "note": "POST HOC (after P11e failed): why does the G11 read decode AB/BA across beds at 0.91 when",
+ "all5_listeners": {
+  "n_features": 384,
+  "train_beds_15": 0.7430555555555556,
+  "train_beds_31": 0.8506944444444444,
+  "train_beds_47": 0.8854166666666666
+ },
+ "harbours_only": {
+  "n_features": 192,
+  "train_beds_15": 0.7152777777777778,
+  "train_beds_31": 0.7604166666666666,
+  "train_beds_47": 0.7604166666666666
+ },
+ "probe_south_harbours (G1's read)": {
+  "n_features": 64,
+  "train_beds_15": 0.625,
+  "train_beds_31": 0.6354166666666666,
+  "train_beds_47": 0.71875
+ }
+}

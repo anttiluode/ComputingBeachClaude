@@ -13,7 +13,18 @@ tests three things with pre-registered gates ([PREREG.md](PREREG.md), pushed as
 
 Built by Claude (Opus 5.5).
 
-**Latest (G10): can the beach stay readable while it learns?** Yes, but only in a narrow window,
+**Latest (G11): is the AB/BA order "dark sand", outside what pings can see?** No. Each bed's echo
+carries the order about 29 noise-σ above a 1 % read. It is dimmer per grain of sand than other writes
+(0.38× the common write's sensitivity) and finer-grained (1.7× the wavenumber), but it is there. What
+varies is the index itself: the same order pattern read through another bed's sensitivity kernels
+looks almost unrelated (cos 0.18), while different beds' order patterns look alike through any one
+bed's kernels (cos 0.66). A reader calibrated on one bed gets 0.85–0.96 on all 8 held-out beds. My
+prediction that a reader trained on other beds would stay ≤ 0.80 **failed**: listening at all five ports
+with 47 training beds reads the order at 0.91, closing most of G1/G4's readout gap (G1's own read on
+the same beds: 0.72). 6 of 7 pre-registered predictions pass.
+[Details below](#g11-dark-sand-or-a-scrambled-index-prereg_g11md).
+
+Before that, **G10: can the beach stay readable while it learns?** Yes, but only in a narrow window,
 and learning there is slow. Every probe now passes through the writer (G9's reads never did). Reads
 below the sand's threshold are free: 8 reads change nothing. Reads at 8× G9's level move the bed, and a
 frozen reader goes from 7 cells to 18–23 (chance 18). Most of the record is still in the sand, and a
@@ -120,7 +131,8 @@ sand that earlier waves wrote.
 
 **What fails:** the ping can't read it. Post hoc ([posthoc_g1_diffread.py](posthoc_g1_diffread.py)),
 the read stays at 0.60–0.64 with **zero** noise, with before/after differencing and
-with probes from all three ports. So noise is not the limit. In this reverberant cavity
+with probes from all three ports. So noise is not the limit. *(G11 update: with all five ports
+listening and 47 training beds, a linear reader gets 0.91; the limit was mainly the two listeners.)* In this reverberant cavity
 the echo is such a scrambled function of the sand that the order difference points a
 different way in every bed's echo, and no reader trained on other beds finds it. The
 P1d slope failure is the same fact seen from the write side: even the weakest write is
@@ -642,6 +654,75 @@ there).
 Dev bed 960 ([dev_960.json](results/g10/dev_960.json)) found two bugs before preregistration, both fixed:
 ideal-arm budgets used pre-clip step norms, and ideal arms kept writing after the task was solved.
 
+## G11: dark sand, or a scrambled index? ([PREREG_G11.md](PREREG_G11.md))
+
+G1 and G4 left one gap open: the sand stores AB vs BA order (sand decoder 0.98), but pings read it at
+0.59–0.80. In conversation (4 Nov) I offered "dark sand" as the reason: the order sits in sand directions
+the pings' sensitivity kernels barely touch. G1's README offered another: every bed files the order
+under a different address. G11 measures the beach's index directly and asks which is true.
+
+**The index.** To first order a weak read changes as dy = J ds. Each row of J is a kernel: the
+ping's field times the listener's field, `(g/2) ∇λ_q·∇η_p` per cell ([beach/dark.py](beach/dark.py),
+checked against finite differences to 8e-7). Reads are G9's BEACH-5 family: 3 probes heard at all 5 ports,
+12 pairs, 16 frequencies, in a LOW band (0.30–0.55) and a HIGH band (0.60–0.95). Storms are G4's
+shared benchmark. Predictions were set on dev beds 1200–1215 and pushed (`3d7a7ed`) before held-out
+beds 1300–1347 (across beds) and 1300–1307 (40 jittered AB/BA pairs each, within bed).
+
+**A proposal withdrawn before the run.** I had also suggested reading the order with a two-ping
+interaction, y_pq − y_p − y_q + y_0. In this linear medium that is identically zero (2.4e-15):
+weak pings superpose exactly. It could only be nonzero if a ping writes, which is the write-to-read
+pilot that already failed.
+
+| held-out, low band | value |
+|---|---|
+| order SNR per bed (‖Δy‖ over two 1 % reads' noise) | **29** (storm record: 56) |
+| sensitivity per unit sand, order ÷ common write | **0.38** (storm 0.86, initial roughness 0.27) |
+| mean spatial wavenumber, order / common write / storm | 0.18 / 0.11 / 0.10 cycles per cell |
+| **transplant**: bed i's order read through bed j's kernels, cos with its own read | **0.18** (high band 0.11) |
+| one bed's kernels, another bed's order pattern, cos | **0.66** |
+| first-order (Born) error: order / storm record | 0.36 / 2.0 |
+| index dimension: singular values of J above 1 % / 5 % of the largest | 383 / 217 of 384 |
+| within-bed reader (8 beds) | 0.925, 0.94, 0.85, 0.96, 0.91, 0.875, 0.925, 0.85 |
+| across-bed reader, low / high / both / sand | **0.91** / 0.68 / 0.81 / 1.00 |
+
+| | prediction | result |
+|---|---|---|
+| P11a | not dark: order SNR ≥ 10 | **PASS** (29) |
+| P11b | dimmer (≤ 0.6) and finer (≥ 1.3×) than the common write | **PASS** (0.38, 1.7×) |
+| P11c | the index scrambles (transplant ≤ 0.4), the content doesn't (≥ 0.6) | **PASS** (0.18, 0.66) |
+| P11d | a bed-calibrated reader works: ≥ 0.85 on 6 of 8 beds | **PASS** (8 of 8) |
+| P11e | an across-bed reader fails: ≤ 0.80 | **FAIL** (0.91) |
+| P11f | first-order index holds for the order (≤ 0.5), not for storms (≥ 1.0) | **PASS** (0.36, 2.0) |
+| P11g | finer waves scramble more: transplant high < low | **PASS** (0.11 < 0.18) |
+
+Reads wrote nothing: worst probe stress 0.95 σ_c, under threshold but closer than G1's 0.27, because the
+high band's amplitude was set on seed 0 and some beds focus it more.
+
+**What this says.** Dark sand is wrong. The order is inside the index, about 29σ above noise on every bed.
+It is dimmer per grain (finer ripples, which the kernels average over), but nowhere near invisible.
+What changes from bed to bed is the **index**: the same pattern of sand produces an almost unrelated echo
+on another bed (cos 0.18), while through any one bed's kernels, different beds' order patterns look alike
+(0.66). The sand is the library and the floor plan at once. Every bed's roughness and common write warp the
+plan, so the same book gets filed under a different address. The P11f row shows the limits of the kernel
+picture: it is good to about 36 % for the order but fails for a storm's deep hole (200 % error). G9's storm
+reading works far past first order.
+
+**Why P11e failed** (post hoc, [posthoc_g11_readers.py](posthoc_g11_readers.py), same held-out reads):
+
+| listeners | 15 training beds | 31 | 47 |
+|---|---|---|---|
+| all 5 ports (12 pairs) | 0.74 | 0.85 | **0.89** |
+| the two harbours (6 pairs) | 0.72 | 0.76 | 0.76 |
+| G1's read (probe south → harbours) | 0.63 | 0.64 | 0.72 |
+
+Both factors matter. G1/G4's reads listened only at the two harbours, and with them this pipeline
+reproduces their 0.72–0.76. Listening at the probe ports too, which gives each probe's own echo and the probes'
+cross-talk, takes it to 0.89, and the curve is still rising with more beds. The scrambled index is real,
+but its scrambling isn't total. A small consistent component survives: read coherence 0.09 against a random
+0.02, and at 29σ per bed that is enough for a linear reader trained on enough beds. My dev set of 16 beds
+(0.63) made me expect failure. So the old "no reader trained on other beds finds it" (G1, above) was a
+statement about two listeners and too few beds. It doesn't hold for the beach itself.
+
 ## G3: can the beach learn to route?
 
 Two swells from the west: ω₁ should reach harbourN and ω₂ harbourS. Five beds, 300
@@ -698,6 +779,11 @@ looks like.
 - At about twice the threshold the physical teacher learns beyond matched exposure (J 0.68–0.77 vs 1.01) with the
   storm record intact. An ideal gradient learner solves the task (J 0.02) keeping it too (G10).
 - A sliding (adaptive) threshold erases every storm within seven read-lengths with nobody reading (G10).
+- The AB/BA order is not dark: it sits ~29σ above 1 % read noise in every bed's echo, dimmer per grain (0.38×)
+  and finer (1.7×) than the common write. The index (the ping × listener kernels) is what changes from bed to bed
+  (transplant cos 0.18), not the order pattern (0.66). Bed-calibrated readers get 0.85–0.96 (G11).
+- With all five ports listening and 47 training beds, an across-bed reader reads order at 0.89–0.91; G1's two
+  listeners give 0.72 on the same beds (G11 and post hoc).
 
 **Failed**
 - Reading order back with pings (P1a); quadratic order growth (P1d).
@@ -716,6 +802,9 @@ looks like.
 - P10i on bed 1010: strong reads on the fixed-habit bed kept *more* record than the unread control (unexplained).
 - P10j: storm-strength exposure erases some sand as well as blinding the reader (SAND 1.7–1.9×).
 - P10k on bed 1011: proj > 1 when teaching deepens the storm's own hole; the SAND reader shows erasure.
+- "Dark sand" (my conversational hypothesis, 4 Nov): rejected by P11a. Also withdrawn: the two-ping
+  interaction read, identically zero in a linear medium.
+- P11e: "an across-bed reader stays ≤ 0.80". It reached 0.91. My 16 dev beds were too few to see it.
 
 **Bugs found on the way**
 - G1's `history()` never applied `ampB`, so swell B ran at amplitude 1, not the
@@ -728,8 +817,8 @@ looks like.
 **Not done**
 - Sol's step 4: WallMemoryLaw's tour law on continuous sand.
 - Fast gating (overtopping berms), real sediment physics, time-domain pings for learning.
-- A nonlinear reader for G1, which would make sense given that the echo scrambles a
-  linearly stored difference.
+- A nonlinear reader for G1. G11 shows a linear one gets 0.91 once all five ports listen, so the
+  question is now how far more training beds take it, not whether it's possible.
 
 ## Run
 
@@ -751,6 +840,13 @@ python g10_check.py                   # G10 instruments against G9's read5/run_s
 ./run_g10.sh                          # G10, ~1.7 h on 2 cores; results/g10/g10_<bed>.json
 python g10_verdict.py results/g10/g10_1010.json results/g10/g10_1011.json > results/g10/verdict.json
 python g10_figure.py                  # results/g10.png
+python g11_run.py check               # G11 kernels vs finite differences; two-ping linearity
+python g11_run.py across 1300 1348 results/g11/across_1300.npz          # ~3 min
+for s in 1300 1301 1302 1303 1304 1305 1306 1307; do python g11_run.py within $s 40 results/g11/within_$s.npz; done
+python -c "import g11_analyse as A, json; json.dump(A.across('results/g11/across_1300.npz'), open('results/g11/across_1300.json','w'), indent=1)"
+python -c "import g11_analyse as A, json; json.dump([A.within(f'results/g11/within_{s}.npz') for s in range(1300,1308)], open('results/g11/within.json','w'), indent=1)"
+python g11_verdict.py results/g11/across_1300.json results/g11/within.json > results/g11/verdict.json
+python posthoc_g11_readers.py
 python make_figures.py
 node tests/check_js.mjs              # the web page's physics against the Python
 node tests/check_crossbar.mjs        # attention.html's crossbar algebra

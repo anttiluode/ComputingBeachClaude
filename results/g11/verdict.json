@@ -1,0 +1,17 @@
+{
+ "predictions": {
+  "P11a_not_dark": true,
+  "P11b_dimmer_and_finer": true,
+  "P11c_index_scrambles_content_does_not": true,
+  "P11d_bed_calibrated_reader_works": true,
+  "P11e_across_bed_reader_fails": false,
+  "P11f_born_order_yes_storm_no": true,
+  "P11g_finer_waves_scramble_more": true
+ },
+ "n_pass": 6,
+ "of": 7,
+ "reads_write_nothing": true,
+ "worst_probe_over_sigma_c": 0.9513436770157541,
+ "dark_sand_rejected": true,
+ "scrambled_index_supported": false
+}
