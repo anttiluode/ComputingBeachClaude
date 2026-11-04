@@ -1,0 +1,70 @@
+{
+ "across": {
+  "n_beds": 16,
+  "worst_probe_over_sigma_c": 0.7854614830528439,
+  "sand_norm": {
+   "order": 2.3156714730202714,
+   "common": 5.590302350061188,
+   "storm": 3.0021915010305174
+  },
+  "radial_k": {
+   "order": 0.1819586679960527,
+   "common": 0.1141988964336238,
+   "storm": 0.0950343023537443,
+   "roughness": 0.05634598426055536
+  },
+  "sand_coherence_order": 0.22947500180581593,
+  "low": {
+   "gain_ratio_order_over_common": 0.3851874211016135,
+   "gain_ratio_storm_over_common": 0.8968643236172252,
+   "gain_ratio_roughness_over_common": 0.2836991131751777,
+   "born_rel_err_order": 0.3647398481754438,
+   "born_rel_err_storm": 1.8822567319553045,
+   "order_snr_median": 28.220919284379306,
+   "storm_snr_median": 55.164460577470265,
+   "read_coherence_order": 0.09915972270277672,
+   "coherence_null_random": 0.0625,
+   "transplant_cos_median": 0.19167738207046453,
+   "same_index_other_order_cos_median": 0.7497434505653024,
+   "index_rank_1pct": 382.0,
+   "index_rank_noise": 221.5
+  },
+  "high": {
+   "gain_ratio_order_over_common": 0.3743576060998229,
+   "gain_ratio_storm_over_common": 0.5375560396051373,
+   "gain_ratio_roughness_over_common": 0.3072822243132086,
+   "born_rel_err_order": 0.6047656995964568,
+   "born_rel_err_storm": 2.833561688886863,
+   "order_snr_median": 10.59279267585817,
+   "storm_snr_median": 8.988908663915474,
+   "read_coherence_order": 0.07660217521011464,
+   "coherence_null_random": 0.0625,
+   "transplant_cos_median": 0.10456511470075452,
+   "same_index_other_order_cos_median": 0.7695150998009161,
+   "index_rank_1pct": 273.5,
+   "index_rank_noise": 150.5
+  },
+  "across_bed_decoding": {
+   "low": 0.625,
+   "high": 0.6875,
+   "both": 0.5625,
+   "sand": 0.9375
+  }
+ },
+ "within": [
+  {
+   "seed": 1200,
+   "n_pairs": 40,
+   "worst_probe_over_sigma_c": 0.18411517996860424,
+   "read": 0.925,
+   "sand": 1.0
+  },
+  {
+   "seed": 1201,
+   "n_pairs": 40,
+   "worst_probe_over_sigma_c": 0.14813496146023644,
+   "read": 0.925,
+   "sand": 1.0
+  }
+ ]
+}
